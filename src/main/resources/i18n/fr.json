@@ -1,0 +1,12 @@
+{
+	"rss.head.title": "Rss",
+	"rss.channel.title": "Titre ",
+	"rss.channel.new.content": "Description ",
+	"rss.channel.new.feed": "RSS ",
+	"rss.channel.new": "Nouvelle Chaine",
+	"rss.channel.new.title": "Edition de la Chaine",
+	"rss.channel.new.save": "Enregistrer",
+	"rss.channel.new.cancel": "Annuler",
+	"rss.channel.edit": "Modifier la  Chaine",
+	"rss.channel.feed.read.more": "Voir plus"
+}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{{#i18n}}rss.head.title{{/i18n}}</title>
+</head>
+<body ng-controller="RssController">
+<nav class="vertical">
+	<h2><i18n>rss.head.title</i18n></h2>
+	
+	<div class="row">
+		<div ng-repeat="feed in widget.feeds track by $index">
+			<article class="row info ng-scope" ng-click="widget.showOrHideFeed([[$index]])">[[feed.title]]</article>
+			<div ng-show="widget.display.selectedFeed === [[$index]]" >
+				<p ng-bind-html="feed.description"></p>
+				<div ng-repeat="item in feed.Items track by $index">
+					<h4 ng-click="widget.showOrHideItem([[$index]])">
+						<span ng-show="widget.display.selectedItem === [[$index]]" ><b>-</b></span>
+						<span ng-show="widget.display.selectedItem !== [[$index]]" ><b>+</b></span>
+						[[item.title]]
+					</h4>
+					<div ng-show="widget.display.selectedItem === [[$index]]" >
+						<p ng-bind-html="item.description"></p>
+						<a href="[[item.link]]" target="_blank"><i18n>rss.channel.feed.read.more</i18n></a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div ng-if="widget.channels.length === 0">
+			<button ng-click="widget.newChannel()"><i18n>rss.channel.new</i18n></button>
+		</div>
+		<div ng-if="widget.channels.length > 0">
+			<button ng-click="widget.editChannel()"><i18n>rss.channel.edit</i18n></button>
+		</div>
+	</div>
+	
+	<lightbox show="widget.display.edition" on-close="widget.closeEdition()">
+		<div class="row">
+			<h2><i18n>rss.channel.new.title</i18n></h2>
+			<article class="twelve cell">
+				<div class="row">
+					<label class="three cell"><i18n>rss.channel.title</i18n></label>
+					<input type="text" ng-model="widget.selectedChannel.title" class="nine cell" />
+				</div>
+				<div>
+					<label class="three cell"><i18n>rss.channel.new.content</i18n></label>
+					<textarea ng-model="widget.selectedChannel.content" rows="4" cols="50" class="nine cell"></textarea>
+				</div>
+				<div class="row" ng-repeat="feed in widget.selectedChannel.feeds track by $index">
+					<label class="three cell"><i18n>rss.channel.new.feed</i18n> [[$index + 1]]</label>
+					<input type="text" ng-model="widget.selectedChannel.feeds[$index]" class="nine cell" />
+				</div>
+				<div class="row">
+					<button class="right-magnet" ng-click="widget.saveChannel()" translate content="rss.channel.new.save"></button>
+					<button  class="right-magnet cancel" ng-click="widget.closeEdition()" translate content="rss.channel.new.cancel"></button>
+				</div>
+				<div class="clear"></div>
+			</article>
+		</div>
+	</lightbox>
+</nav>
+</body>
+</html>

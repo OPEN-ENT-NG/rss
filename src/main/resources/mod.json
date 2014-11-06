@@ -1,0 +1,11 @@
+{
+	"main" : "fr.wseduc.rss.Rss",
+	"port" : 8028,
+	"app-name" : "Rss",
+	"app-address" : "/rss",
+	"app-icon" : "rss-large",
+	"mode": "dev",
+	"integration-mode" : "HTTP",
+	"app-registry.port" : 8012,
+	"entcore.port" : 8090
+}
