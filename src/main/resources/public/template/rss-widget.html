@@ -1,35 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<title>{{#i18n}}rss.head.title{{/i18n}}</title>
-	<style>
-		.rssFlux{
-			border: 1px solid #ccc; 
-			border-radius: 3px; 
-			margin-top: 10px; 
-			padding: 8px;
-		}
-		.rssArticle{
-			border-top: 1px solid #ccc; 
-			padding: 8px 2px 8px 2px;
-		}
-		.italic{
-			font-style: italic;
-		}
-	</style>
-</head>
-<body ng-controller="RssController">
-	<h2><i18n>rss.head.title</i18n></h2>
-	<div class="row" ng-if="widget.feeds !== undefined">
-		<div ng-repeat="feed in widget.feeds track by $index" class="rssFlux">
+<div class="widget rss-widget">
+	<h1><i18n>rss.head.title</i18n></h1>
+	<div class="fluxes" ng-if="widget.feeds !== undefined">
+		<div ng-repeat="feed in widget.feeds track by $index" class="rss-flux">
 			<a ng-click="widget.showOrHideFeed([[$index]])"><b>[[feed.title]]</b></a>
-			<p ng-show="widget.display.selectedFeed === [[$index]]" ng-bind-html="feed.description" class="italic"></p>
+			<p ng-show="widget.display.selectedFeed === [[$index]]" ng-bind-html="feed.description"></p>
 			<div ng-show="widget.display.selectedFeed === [[$index]]">
-				<div ng-repeat="item in feed.Items track by $index" class="rssArticle">
+				<div ng-repeat="item in feed.Items track by $index" class="rss-article">
 					<a ng-click="widget.showOrHideItem([[$index]])">
 						[[item.title]]
 					</a>
-					<div ng-show="widget.display.selectedItem === [[$index]]" >
+					<div ng-show="widget.display.selectedItem === [[$index]]" class="selected-item">
 						<p ng-bind-html="item.description"></p>
 						<a href="[[item.link]]" target="_blank"><i18n>rss.channel.feed.read.more</i18n></a>
 					</div>
@@ -39,12 +19,12 @@
 	</div>
 	<br>
 	<div  class="row" >
-		<button worflow="channel.create" ng-if="widget.channel === undefined" ng-click="widget.newChannel()"><i18n>rss.channel.new</i18n></button>
+		<button worflow="channel.create" ng-if="widget.channel === undefined" ng-click="widget.newChannel()" class="channel"><i18n>rss.channel.new</i18n></button>
 		<behaviour name="manager" resource="channel">
-			<button ng-if="widget.channel !== undefined"ng-click="widget.editChannel()"><i18n>rss.channel.edit</i18n></button>
+			<button ng-if="widget.channel !== undefined" ng-click="widget.editChannel()" class="channel"><i18n>rss.channel.edit</i18n></button>
 		</behaviour>
 	</div>
-		
+
 	<lightbox show="widget.display.edition" on-close="widget.closeEdition()">
 		<h2><i18n>rss.channel.new.title</i18n></h2>
 		<article class="twelve cell">
@@ -67,5 +47,4 @@
 			<div class="clear"></div>
 		</article>
 	</lightbox>
-</body>
-</html>
+</div>
