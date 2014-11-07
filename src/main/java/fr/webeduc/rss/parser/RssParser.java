@@ -37,12 +37,10 @@ public class RssParser extends Verticle implements Handler<Message<String>> {
 			});
 			parser.parse(url, handler);
 		} catch (SAXException | IOException se) {
-			se.printStackTrace();
-			results.putNumber("status", 500);
+			results.putNumber("status", 204);
 			message.reply(results);
 		} catch (ParserConfigurationException pce) {
-			pce.printStackTrace();
-			results.putNumber("status", 500);
+			results.putNumber("status", 204);
 			message.reply(results);
 		}
 	}

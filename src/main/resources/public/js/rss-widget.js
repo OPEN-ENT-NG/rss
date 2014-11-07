@@ -1,4 +1,5 @@
 var rssWidget = model.widgets.findWidget('rss');
+rssWidget.channel = undefined;
 rssWidget.feeds = undefined;
 rssWidget.selectedChannel = undefined;
 rssWidget.totalFeeds = 3;
@@ -14,13 +15,13 @@ model.makePermanent(Channel, { fromApplication: 'rss' });
 
 rssWidget.loadFeeds = function(){
 	http().get('/rss/channels').done(function(channels){
-		rssWidget.channels = channels;
-		rssWidget.feeds = [];
 		if(channels.length > 0){
-			rssWidget.channels[0].feeds.forEach(function(url){
+			rssWidget.feeds = [];
+			rssWidget.channel = channels[0];
+			rssWidget.channel.feeds.forEach(function(url){
 				if(url !== null && url !== ""){
 					http().get('/rss/feed/items?url=' + encodeURIComponent(url)).done(function(feed){
-						if(feed.status === 200){
+						if(feed !== undefined && feed.status === 200){
 							rssWidget.feeds.push(feed);
 						}
 					});
@@ -35,8 +36,9 @@ rssWidget.loadFeeds();
 
 rssWidget.createChannel = function(callback){
 	http().postJson('/rss/channel', rssWidget.selectedChannel).done(function(response){
-		rssWidget.channels[0] = rssWidget.selectedChannel;
+		rssWidget.channel = rssWidget.selectedChannel;
 		model.widgets.apply();
+		setTimeout(rssWidget.loadFeeds(), 1000);
 		if(typeof callback === 'function'){
 			callback();
 		}
@@ -50,7 +52,7 @@ rssWidget.newChannel = function(){
 };
 
 rssWidget.editChannel = function(){
-	rssWidget.selectedChannel = rssWidget.channels[0];
+	rssWidget.selectedChannel = rssWidget.channel;
 	rssWidget.display.edition = true;
 };
 
@@ -60,19 +62,21 @@ rssWidget.closeEdition = function(){
 };
 
 rssWidget.saveChannel = function(callback){
-	if(this._id){
+	if(rssWidget.selectedChannel._id){
 		rssWidget.saveModifications(callback);
 	}
 	else{
 		rssWidget.createChannel(callback);
 	}
 	rssWidget.closeEdition();
-	rssWidget.loadFeeds();
 };
 
 rssWidget.saveModifications= function(callback){
-	http().putJson('/rss/channel/' + rssWidget.selectedChannel._id, rssWidget.selectedChannel).done(function(e){
-		rssWidget.channels[0] = rssWidget.selectedChannel;
+	http().putJson('/rss/channel/' + rssWidget.selectedChannel._id, {title:  rssWidget.channel.title
+			, content: rssWidget.channel.content, feeds: rssWidget.channel.feeds}).done(function(e){
+		rssWidget.channel = rssWidget.selectedChannel;
+		model.widgets.apply();
+		setTimeout(rssWidget.loadFeeds(), 1000);
 		if(typeof callback === 'function'){
 			callback();
 		}

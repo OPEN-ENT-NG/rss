@@ -19,9 +19,8 @@
 	</style>
 </head>
 <body ng-controller="RssController">
-<nav class="vertical">
 	<h2><i18n>rss.head.title</i18n></h2>
-	<div class="row">
+	<div class="row" ng-if="widget.feeds !== undefined">
 		<div ng-repeat="feed in widget.feeds track by $index" class="rssFlux">
 			<a ng-click="widget.showOrHideFeed([[$index]])"><b>[[feed.title]]</b></a>
 			<p ng-show="widget.display.selectedFeed === [[$index]]" ng-bind-html="feed.description" class="italic"></p>
@@ -37,13 +36,11 @@
 				</div>
 			</div>
 		</div>
-		<br>
-		<div ng-if="widget.channels.length === 0">
-			<button ng-click="widget.newChannel()"><i18n>rss.channel.new</i18n></button>
-		</div>
-		<div ng-if="widget.channels.length > 0">
-			<button ng-click="widget.editChannel()"><i18n>rss.channel.edit</i18n></button>
-		</div>
+	</div>
+	<br>
+	<div  class="row" >
+		<button ng-if="widget.channel === undefined" ng-click="widget.newChannel()"><i18n>rss.channel.new</i18n></button>
+		<button ng-if="widget.channel !== undefined"ng-click="widget.editChannel()"><i18n>rss.channel.edit</i18n></button>
 	</div>
 		
 	<lightbox show="widget.display.edition" on-close="widget.closeEdition()">
@@ -68,6 +65,5 @@
 			<div class="clear"></div>
 		</article>
 	</lightbox>
-</nav>
 </body>
 </html>
