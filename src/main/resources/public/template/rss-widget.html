@@ -2,32 +2,42 @@
 <html>
 <head>
 	<title>{{#i18n}}rss.head.title{{/i18n}}</title>
+	<style>
+		.rssFlux{
+			border: 1px solid #ccc; 
+			border-radius: 3px; 
+			margin-top: 10px; 
+			padding: 8px;
+		}
+		.rssArticle{
+			border-top: 1px solid #ccc; 
+			padding: 8px 2px 8px 2px;
+		}
+		.italic{
+			font-style: italic;
+		}
+	</style>
 </head>
 <body ng-controller="RssController">
 <nav class="vertical">
 	<h2><i18n>rss.head.title</i18n></h2>
-	<br>
 	<div class="row">
-		<div class="row" ng-repeat="feed in widget.feeds track by $index">
-			<article ng-click="widget.showOrHideFeed([[$index]])">
-				<h4 style = "color: #1bbded;"><b>[[feed.title]]</b></h4>
-				<p ng-show="widget.display.selectedFeed === [[$index]]" ng-bind-html="feed.description" style="font-style: italic;"></p>
-			</article>
-			<div ng-show="widget.display.selectedFeed === [[$index]]" style = "background: #f6f6f6;">
-				<article class="row" ng-repeat="item in feed.Items track by $index">
-					<h4 style = "color: #1bbded;" ng-click="widget.showOrHideItem([[$index]])">
-						<span ng-show="widget.display.selectedItem === [[$index]]" ><b>-</b></span>
-						<span ng-show="widget.display.selectedItem !== [[$index]]" ><b>+</b></span>
+		<div ng-repeat="feed in widget.feeds track by $index" class="rssFlux">
+			<a ng-click="widget.showOrHideFeed([[$index]])"><b>[[feed.title]]</b></a>
+			<p ng-show="widget.display.selectedFeed === [[$index]]" ng-bind-html="feed.description" class="italic"></p>
+			<div ng-show="widget.display.selectedFeed === [[$index]]" >
+				<div class="row" ng-repeat="item in feed.Items track by $index" class="rssArticle">
+					<a ng-click="widget.showOrHideItem([[$index]])">
 						[[item.title]]
-					</h4>
+					</a>
 					<div ng-show="widget.display.selectedItem === [[$index]]" >
 						<p ng-bind-html="item.description"></p>
 						<a href="[[item.link]]" target="_blank"><i18n>rss.channel.feed.read.more</i18n></a>
 					</div>
-				</article>
+				</div>
 			</div>
-			<br>
 		</div>
+		<br>
 		<div ng-if="widget.channels.length === 0">
 			<button ng-click="widget.newChannel()"><i18n>rss.channel.new</i18n></button>
 		</div>
