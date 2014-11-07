@@ -1,7 +1,7 @@
 var rssBehaviours = {
 	resources: {
-		createChannel: {
-			right: 'fr-wseduc-rss-controllers-RssController|createChannel'
+		getChannel: {
+			right: 'fr-wseduc-rss-controllers-RssController|getchannel'
 		},
 		editChannel: {
 			right: 'fr-wseduc-rss-controllers-RssController|updateChannel'
@@ -11,7 +11,10 @@ var rssBehaviours = {
 		}
 	},
 	workflow: {
-		view: 'fr.wseduc.rss.controllers.RssController|view'
+		view: 'fr.wseduc.rss.controllers.RssController|view',
+		list: 'fr.wseduc.rss.controllers.RssController|getchannels',
+		create: 'fr.wseduc.rss.controllers.RssController|createchannel',
+		read: 'fr.wseduc.rss.controllers.RssController|getfeedItems'
 	}
 };
 

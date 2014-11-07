@@ -39,8 +39,10 @@
 	</div>
 	<br>
 	<div  class="row" >
-		<button ng-if="widget.channel === undefined" ng-click="widget.newChannel()"><i18n>rss.channel.new</i18n></button>
-		<button ng-if="widget.channel !== undefined"ng-click="widget.editChannel()"><i18n>rss.channel.edit</i18n></button>
+		<button worflow="channel.create" ng-if="widget.channel === undefined" ng-click="widget.newChannel()"><i18n>rss.channel.new</i18n></button>
+		<behaviour name="manager" resource="channel">
+			<button ng-if="widget.channel !== undefined"ng-click="widget.editChannel()"><i18n>rss.channel.edit</i18n></button>
+		</behaviour>
 	</div>
 		
 	<lightbox show="widget.display.edition" on-close="widget.closeEdition()">

@@ -40,7 +40,7 @@ public class RssController extends MongoDbControllerHelper {
 	}
 
 	@Get("/channels")
-	@SecuredAction("rss.list")
+	@SecuredAction("channel.list")
 	public void getchannels(final HttpServerRequest request) {
 		UserUtils.getUserInfos(eb, request, new Handler<UserInfos>() {
 			@Override
@@ -51,13 +51,13 @@ public class RssController extends MongoDbControllerHelper {
 	}
 
 	@Post("/channel")
-	@SecuredAction("rss.create")
+	@SecuredAction("channel.create")
 	public void createchannel(HttpServerRequest request) {
 		super.create(request);
 	}
 
 	@Get("/channel/:id")
-	@SecuredAction(value = "rss.read", type = ActionType.RESOURCE)
+	@SecuredAction(value = "channel.read", type = ActionType.RESOURCE)
 	public void getchannel(final HttpServerRequest request) {
 		UserUtils.getUserInfos(eb, request, new Handler<UserInfos>() {
 			@Override
@@ -69,13 +69,13 @@ public class RssController extends MongoDbControllerHelper {
 	}
 
 	@Put("/channel/:id")
-	@SecuredAction(value = "rss.update", type = ActionType.RESOURCE)
+	@SecuredAction(value = "channel.update", type = ActionType.RESOURCE)
 	public void updatechannel(HttpServerRequest request) {
 		super.update(request);
 	}
 
 	@Delete("/channel/:id")
-	@SecuredAction(value = "rss.delete", type = ActionType.RESOURCE)
+	@SecuredAction(value = "channel.delete", type = ActionType.RESOURCE)
 	public void deletechannel(HttpServerRequest request) {
 		final String id = request.params().get("id");
 		channelService.deleteChannel(id, defaultResponseHandler(request));
