@@ -1,8 +1,13 @@
-package fr.wseduc.rss.controller;
+package net.atos.entng.rss.controller;
 
 import static org.entcore.common.http.response.DefaultResponseHandler.arrayResponseHandler;
 import static org.entcore.common.http.response.DefaultResponseHandler.defaultResponseHandler;
 import static org.entcore.common.http.response.DefaultResponseHandler.notEmptyResponseHandler;
+
+import net.atos.entng.rss.service.ChannelService;
+import net.atos.entng.rss.service.ChannelServiceMongoImpl;
+import net.atos.entng.rss.service.FeedService;
+import net.atos.entng.rss.service.FeedServiceImpl;
 
 import org.entcore.common.mongodb.MongoDbControllerHelper;
 import org.entcore.common.user.UserInfos;
@@ -15,10 +20,6 @@ import fr.wseduc.rs.Delete;
 import fr.wseduc.rs.Get;
 import fr.wseduc.rs.Post;
 import fr.wseduc.rs.Put;
-import fr.wseduc.rss.service.ChannelService;
-import fr.wseduc.rss.service.ChannelServiceMongoImpl;
-import fr.wseduc.rss.service.FeedService;
-import fr.wseduc.rss.service.FeedServiceImpl;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
 

@@ -1,17 +1,16 @@
 var rssBehaviours = {
 	resources: {
 		getChannel: {
-			right: 'fr-wseduc-rss-controllers-RssController|getchannel'
+			right: 'net-atos-entng-rss-controllers-RssController|getchannel'
 		},
 		editChannel: {
-			right: 'fr-wseduc-rss-controllers-RssController|updateChannel'
+			right: 'net-atos-entng-rss-controllers-RssController|updateChannel'
 		},
 		deleteChannel: {
-			right: 'fr-wseduc-rss-controllers-RssController|deleteChannel'
+			right: 'net-atos-entng-rss-controllers-RssController|deleteChannel'
 		}
 	},
 	workflow: {
-		
 	}
 };
 

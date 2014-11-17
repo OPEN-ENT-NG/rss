@@ -1,4 +1,7 @@
-package fr.webeduc.rss.parser;
+package net.atos.entng.rss.parser;
+
+import net.atos.entng.rss.model.Feed;
+import net.atos.entng.rss.model.Item;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
@@ -6,8 +9,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import fr.webeduc.rss.model.Feed;
-import fr.webeduc.rss.model.Item;
 
 public class RssParserHandler extends DefaultHandler {
 

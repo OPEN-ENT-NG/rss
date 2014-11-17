@@ -1,4 +1,4 @@
-package fr.wseduc.rss.service;
+package net.atos.entng.rss.service;
 
 import org.entcore.common.user.UserInfos;
 import org.vertx.java.core.Handler;

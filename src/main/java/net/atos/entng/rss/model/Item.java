@@ -1,4 +1,4 @@
-package fr.webeduc.rss.model;
+package net.atos.entng.rss.model;
 
 import org.vertx.java.core.json.JsonObject;
 

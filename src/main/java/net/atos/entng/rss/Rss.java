@@ -1,11 +1,12 @@
-package fr.wseduc.rss;
+package net.atos.entng.rss;
+
+import net.atos.entng.rss.controller.RssController;
+import net.atos.entng.rss.parser.RssParser;
 
 import org.entcore.common.http.BaseServer;
 import org.entcore.common.http.filter.ShareAndOwner;
 import org.entcore.common.mongodb.MongoDbConf;
 
-import fr.webeduc.rss.parser.RssParser;
-import fr.wseduc.rss.controller.RssController;
 
 public class Rss extends BaseServer {
 

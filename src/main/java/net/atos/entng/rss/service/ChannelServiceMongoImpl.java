@@ -1,4 +1,4 @@
-package fr.wseduc.rss.service;
+package net.atos.entng.rss.service;
 
 import static org.entcore.common.mongodb.MongoDbResult.validResultHandler;
 import static org.entcore.common.mongodb.MongoDbResult.validResultsHandler;

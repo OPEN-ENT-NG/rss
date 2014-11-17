@@ -1,4 +1,4 @@
-package fr.webeduc.rss.parser;
+package net.atos.entng.rss.parser;
 
 import java.io.IOException;
 

@@ -1,5 +1,5 @@
 {
-	"main" : "fr.wseduc.rss.Rss",
+	"main" : "net.atos.entng.rss.Rss",
 	"port" : 8028,
 	"app-name" : "Rss",
 	"app-address" : "/rss",
