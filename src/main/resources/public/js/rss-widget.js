@@ -23,11 +23,11 @@ rssWidget.loadFeeds = function(){
 					http().get('/rss/feed/items?url=' + encodeURIComponent(url)).done(function(feed){
 						if(feed !== undefined && feed.status === 200){
 							rssWidget.feeds.push(feed);
+							model.widgets.apply();
 						}
 					});
 				}
 			});
-			model.widgets.apply();
 		}
 	});
 };
@@ -38,7 +38,7 @@ rssWidget.createChannel = function(callback){
 	http().postJson('/rss/channel', rssWidget.selectedChannel).done(function(response){
 		rssWidget.channel = rssWidget.selectedChannel;
 		model.widgets.apply();
-		setTimeout(rssWidget.loadFeeds(), 1000);
+		rssWidget.loadFeeds();
 		if(typeof callback === 'function'){
 			callback();
 		}
