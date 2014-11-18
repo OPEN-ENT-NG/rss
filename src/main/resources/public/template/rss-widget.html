@@ -18,10 +18,8 @@
 		</div>
 	</div>
 	<div  class="row" >
-		<button worflow="channel.create" ng-if="widget.channel === undefined" ng-click="widget.newChannel()" class="channel"><i18n>rss.channel.new</i18n></button>
-		<behaviour name="manager" resource="channel">
-			<button ng-if="widget.channel !== undefined" ng-click="widget.editChannel()" class="channel"><i18n>rss.channel.edit</i18n></button>
-		</behaviour>
+		<button ng-if="widget.channel === undefined" ng-click="widget.newChannel()" class="channel"><i18n>rss.channel.new</i18n></button>
+		<button ng-if="widget.channel !== undefined" ng-click="widget.editChannel()" class="channel"><i18n>rss.channel.edit</i18n></button>
 	</div>
 
 	<lightbox show="widget.display.edition" on-close="widget.closeEdition()">
@@ -41,7 +39,7 @@
 			</div>
 			<div class="row">
 				<button class="right-magnet" ng-click="widget.saveChannel()" translate content="rss.channel.new.save"></button>
-				<button  class="right-magnet cancel" ng-click="widget.closeEdition()" translate content="rss.channel.new.cancel"></button>
+				<button class="right-magnet cancel" ng-click="widget.closeEdition()" translate content="rss.channel.new.cancel"></button>
 			</div>
 			<div class="clear"></div>
 		</article>

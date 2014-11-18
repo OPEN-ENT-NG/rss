@@ -11,10 +11,7 @@ var rssBehaviours = {
 		}
 	},
 	workflow: {
-		view: 'fr.wseduc.rss.controllers.RssController|view',
-		list: 'fr.wseduc.rss.controllers.RssController|getchannels',
-		create: 'fr.wseduc.rss.controllers.RssController|createchannel',
-		read: 'fr.wseduc.rss.controllers.RssController|getfeedItems'
+		
 	}
 };
 

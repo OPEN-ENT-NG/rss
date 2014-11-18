@@ -34,13 +34,13 @@ public class RssController extends MongoDbControllerHelper {
 	}
 
 	@Get("")
-	@SecuredAction("rss.view")
+	@SecuredAction(value = "rss.view", type = ActionType.AUTHENTICATED)
 	public void view(HttpServerRequest request) {
 		renderView(request);
 	}
 
 	@Get("/channels")
-	@SecuredAction("channel.list")
+	@SecuredAction(value = "channel.list", type = ActionType.AUTHENTICATED)
 	public void getchannels(final HttpServerRequest request) {
 		UserUtils.getUserInfos(eb, request, new Handler<UserInfos>() {
 			@Override
@@ -51,7 +51,7 @@ public class RssController extends MongoDbControllerHelper {
 	}
 
 	@Post("/channel")
-	@SecuredAction("channel.create")
+	@SecuredAction(value = "channel.create", type = ActionType.AUTHENTICATED)
 	public void createchannel(HttpServerRequest request) {
 		super.create(request);
 	}
@@ -84,7 +84,7 @@ public class RssController extends MongoDbControllerHelper {
 	/* feeds */
 
 	@Get("/feed/items")
-	@SecuredAction("feed.read")
+	@SecuredAction(value = "feed.read", type = ActionType.AUTHENTICATED)
 	public void getfeedItems(final HttpServerRequest request) {
 		final String url = request.params().get("url");
 		if(url != null && url.trim() != ""){
