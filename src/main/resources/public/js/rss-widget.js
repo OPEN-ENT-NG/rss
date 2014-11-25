@@ -13,35 +13,48 @@ function Channel(){}
 model.makeModel(Channel);
 model.makePermanent(Channel, { fromApplication: 'rss' });
 
-rssWidget.loadFeeds = function(){
-	http().get('/rss/channels').done(function(channels){
-		if(channels.length > 0){
-			rssWidget.feeds = [];
-			rssWidget.channel = channels[0];
-			rssWidget.channel.feeds.forEach(function(url){
-				if(url !== null && url !== ""){
-					http().get('/rss/feed/items?url=' + encodeURIComponent(url)).done(function(feed){
-						if(feed !== undefined && feed.status === 200){
-							rssWidget.feeds.push(feed);
-							model.widgets.apply();
-						}
-					});
+rssWidget.updateFeeds = function(force){
+	rssWidget.feeds = [];
+	model.widgets.apply();
+	rssWidget.channel.feeds.forEach(function(url){
+		if(url !== null && url !== ""){
+			http().get('/rss/feed/items?url=' + encodeURIComponent(url) + '&force=' + force).done(function(feed){
+				if(feed !== undefined && feed.status === 200){
+					rssWidget.feeds.push(feed);
+					model.widgets.apply();
 				}
 			});
 		}
 	});
 };
 
-rssWidget.loadFeeds();
+rssWidget.initFeeds = function(){
+	if(rssWidget.channel === undefined){
+		http().get('/rss/channels').done(function(channels){
+			if(channels.length > 0){
+				rssWidget.channel = channels[0];
+				model.widgets.apply();
+				rssWidget.updateFeeds(0); // 0 : default, from the cache
+			}
+		});
+	}
+	else{
+		rssWidget.updateFeeds(0); // 0 : default, from the cache
+	}
+};
+
+// init channel & feeds
+rssWidget.initFeeds();
 
 rssWidget.createChannel = function(callback){
 	http().postJson('/rss/channel', rssWidget.selectedChannel).done(function(response){
 		rssWidget.channel = rssWidget.selectedChannel;
 		model.widgets.apply();
-		rssWidget.loadFeeds();
+		rssWidget.updateFeeds(0); // 0 : default, from the cache
 		if(typeof callback === 'function'){
 			callback();
 		}
+		rssWidget.closeEdition();
 	}.bind(this));
 };
 
@@ -68,7 +81,6 @@ rssWidget.saveChannel = function(callback){
 	else{
 		rssWidget.createChannel(callback);
 	}
-	rssWidget.closeEdition();
 };
 
 rssWidget.saveModifications= function(callback){
@@ -76,10 +88,11 @@ rssWidget.saveModifications= function(callback){
 			, content: rssWidget.channel.content, feeds: rssWidget.channel.feeds}).done(function(e){
 		rssWidget.channel = rssWidget.selectedChannel;
 		model.widgets.apply();
-		setTimeout(rssWidget.loadFeeds(), 1000);
+		rssWidget.updateFeeds(0); // 0 : default, from the cache
 		if(typeof callback === 'function'){
 			callback();
 		}
+		rssWidget.closeEdition();
 	});
 };
 

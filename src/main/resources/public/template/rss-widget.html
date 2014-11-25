@@ -18,6 +18,7 @@
 		</div>
 	</div>
 	<div  class="row" >
+		<button ng-if="widget.channel !== undefined" ng-click="widget.updateFeeds(1)" class="channel"><i18n>rss.channel.feed.update</i18n></button>
 		<button ng-if="widget.channel === undefined" ng-click="widget.newChannel()" class="channel"><i18n>rss.channel.new</i18n></button>
 		<button ng-if="widget.channel !== undefined" ng-click="widget.editChannel()" class="channel"><i18n>rss.channel.edit</i18n></button>
 	</div>

@@ -8,6 +8,6 @@ import fr.wseduc.webutils.Either;
 
 public interface FeedService {
 
-	public void getItems(HttpServerRequest request, String url, Handler<Either<String, JsonObject>> handler);
+	public void getItems(HttpServerRequest request, String url, String force, Handler<Either<String, JsonObject>> handler);
 
 }

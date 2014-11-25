@@ -88,8 +88,9 @@ public class RssController extends MongoDbControllerHelper {
 	@SecuredAction(value = "feed.read", type = ActionType.AUTHENTICATED)
 	public void getfeedItems(final HttpServerRequest request) {
 		final String url = request.params().get("url");
+		final String force = request.params().get("force");
 		if(url != null && url.trim() != ""){
-			feedService.getItems(request, url, defaultResponseHandler(request));
+			feedService.getItems(request, url, force, defaultResponseHandler(request));
 		}
 	}
 
