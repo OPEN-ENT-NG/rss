@@ -4,6 +4,7 @@ import static org.entcore.common.http.response.DefaultResponseHandler.arrayRespo
 import static org.entcore.common.http.response.DefaultResponseHandler.defaultResponseHandler;
 import static org.entcore.common.http.response.DefaultResponseHandler.notEmptyResponseHandler;
 
+import net.atos.entng.rss.Rss;
 import net.atos.entng.rss.service.ChannelService;
 import net.atos.entng.rss.service.ChannelServiceMongoImpl;
 import net.atos.entng.rss.service.FeedService;
@@ -28,9 +29,9 @@ public class RssController extends MongoDbControllerHelper {
 	private final ChannelService channelService;
 	private final FeedService feedService;
 
-	public RssController(final String collection, EventBus eb) {
-		super(collection);
-		this.channelService = new ChannelServiceMongoImpl(collection);
+	public RssController(EventBus eb) {
+		super(Rss.RSS_COLLECTION);
+		this.channelService = new ChannelServiceMongoImpl(Rss.RSS_COLLECTION);
 		this.feedService = new FeedServiceImpl(eb);
 	}
 

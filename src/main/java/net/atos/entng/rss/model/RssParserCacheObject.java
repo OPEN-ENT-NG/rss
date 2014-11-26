@@ -3,20 +3,20 @@ package net.atos.entng.rss.model;
 import org.vertx.java.core.json.JsonObject;
 
 public class RssParserCacheObject {
-    private long lastUpdate;
+    private long lastUse;
     private JsonObject value;
 
     public RssParserCacheObject(JsonObject value) {
         this.value = value;
-        this.lastUpdate = System.currentTimeMillis();
+        this.lastUse = System.currentTimeMillis();
     }
 
-	public long getLastUpdate() {
-		return lastUpdate;
+	public long getLastUse() {
+		return lastUse;
 	}
 
-	public void setLastUpdate(long lastUpdate) {
-		this.lastUpdate = lastUpdate;
+	public void setLastUse(long lastUse) {
+		this.lastUse = lastUse;
 	}
 
 	public JsonObject getValue() {

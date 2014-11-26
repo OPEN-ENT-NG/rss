@@ -15,10 +15,10 @@ public class Rss extends BaseServer {
 	@Override
 	public void start() {
 		super.start();
-		addController(new RssController(RSS_COLLECTION, vertx.eventBus()));
+		addController(new RssController(vertx.eventBus()));
 		MongoDbConf.getInstance().setCollection(RSS_COLLECTION);
 		setDefaultResourceFilter(new ShareAndOwner());
-		container.deployWorkerVerticle(RssParser.class.getName());
+		container.deployWorkerVerticle(RssParser.class.getName(), config);
 	}
 
 }
