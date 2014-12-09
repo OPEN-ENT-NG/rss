@@ -1,7 +1,7 @@
 <div class="widget rss-widget">
 	<h1>
-		<span ng-click="widget.configChannel()" title="Configurer" class="rss-config-button"></span>
-		<span ng-if="widget.channel !== undefined" ng-click="widget.updateFeeds(1)" title="Rafra&icirc;chir" class="rss-refresh-button"></span>
+		<span ng-click="widget.configChannel()" tooltip="rss.channel.config" class="rss-config-button"></span>
+		<span ng-if="widget.channel !== undefined" ng-click="widget.updateFeeds(1)" tooltip="rss.channel.refresh" class="rss-refresh-button"></span>
 	</h1>
 	<div class="message" ng-if="widget.feeds === undefined">
 		<i18n>rss.channel.undefined</i18n>

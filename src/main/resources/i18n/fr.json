@@ -1,6 +1,8 @@
 {
 	"rss.head.title": "Rss",
 	"rss.channel.title": "Titre ",
+	"rss.channel.config": "Configurer",
+	"rss.channel.refresh": "Rafra&icirc;chir",
 	"rss.channel.undefined": "Aucun flux configuré",
 	"rss.channel.new.content": "Description ",
 	"rss.channel.new.feed": "RSS ",
