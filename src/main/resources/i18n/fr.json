@@ -1,6 +1,7 @@
 {
 	"rss.head.title": "Rss",
 	"rss.channel.title": "Titre ",
+	"rss.channel.undefined": "Aucun flux configuré",
 	"rss.channel.new.content": "Description ",
 	"rss.channel.new.feed": "RSS ",
 	"rss.channel.new": "Configurer les flux",
@@ -9,5 +10,6 @@
 	"rss.channel.new.cancel": "Annuler",
 	"rss.channel.edit": "Configurer les flux",
 	"rss.channel.feed.read.more": "Voir plus",
-	"rss.channel.feed.update": "Actualiser"
+	"rss.channel.feed.update": "Actualiser",
+	"rss.channel.feeds.no.result": "Aucun résultat"
 }

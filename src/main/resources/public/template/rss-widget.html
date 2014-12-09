@@ -1,8 +1,18 @@
 <div class="widget rss-widget">
-	<h1><i18n>rss.head.title</i18n></h1>
+	<h1>
+		<span ng-click="widget.configChannel()" title="Configurer" class="rss-config-button"></span>
+		<span ng-if="widget.channel !== undefined" ng-click="widget.updateFeeds(1)" title="Rafra&icirc;chir" class="rss-refresh-button"></span>
+	</h1>
+	<div class="message" ng-if="widget.feeds === undefined">
+		<i18n>rss.channel.undefined</i18n>
+	</div>
+	<div class="message" ng-if="widget.channel !== undefined && widget.feeds === undefined">
+		<i18n>rss.channel.feeds.no.result</i18n>
+	</div>
+
 	<div class="fluxes" ng-if="widget.feeds !== undefined">
 		<div ng-repeat="feed in widget.feeds track by $index" class="rss-flux">
-			<a ng-click="widget.showOrHideFeed([[$index]])"><b>[[feed.title]]</b></a>
+			<a ng-click="widget.showOrHideFeed([[$index]])">[[feed.title]]</a>
 			<p ng-show="widget.display.selectedFeed === [[$index]]" ng-bind-html="feed.description"></p>
 			<div ng-show="widget.display.selectedFeed === [[$index]]">
 				<div ng-repeat="item in feed.Items track by $index" class="rss-article">
@@ -16,11 +26,6 @@
 				</div>
 			</div>
 		</div>
-	</div>
-	<div  class="row" >
-		<button ng-if="widget.channel !== undefined" ng-click="widget.updateFeeds(1)" class="channel"><i18n>rss.channel.feed.update</i18n></button>
-		<button ng-if="widget.channel === undefined" ng-click="widget.newChannel()" class="channel"><i18n>rss.channel.new</i18n></button>
-		<button ng-if="widget.channel !== undefined" ng-click="widget.editChannel()" class="channel"><i18n>rss.channel.edit</i18n></button>
 	</div>
 
 	<lightbox show="widget.display.edition" on-close="widget.closeEdition()">

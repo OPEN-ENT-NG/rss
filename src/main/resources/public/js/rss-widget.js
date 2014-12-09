@@ -69,6 +69,15 @@ rssWidget.editChannel = function(){
 	rssWidget.display.edition = true;
 };
 
+rssWidget.configChannel = function(){
+	if(rssWidget.channel){
+		rssWidget.editChannel();
+	}
+	else{
+		rssWidget.newChannel();
+	}
+};
+
 rssWidget.closeEdition = function(){
 	rssWidget.selectedChannel = undefined;
 	rssWidget.display.edition = false;
