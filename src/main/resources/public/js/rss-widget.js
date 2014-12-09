@@ -19,7 +19,7 @@ rssWidget.updateFeeds = function(force){
 	rssWidget.channel.feeds.forEach(function(url){
 		if(url !== null && url !== ""){
 			http().get('/rss/feed/items?url=' + encodeURIComponent(url) + '&force=' + force).done(function(feed){
-				if(feed !== undefined && feed.status === 200 rssWidget.feeds.length < rssWidget.totalFeeds){
+				if(feed !== undefined && feed.status === 200 && rssWidget.feeds.length < rssWidget.totalFeeds){
 					rssWidget.feeds.push(feed);
 					model.widgets.apply();
 				}
