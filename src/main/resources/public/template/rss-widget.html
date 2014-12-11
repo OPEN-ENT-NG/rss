@@ -32,22 +32,33 @@
 		<h2><i18n>rss.channel.new.title</i18n></h2>
 		<article class="twelve cell">
 			<div class="row">
-				<label class="three cell"><i18n>rss.channel.title</i18n></label>
-				<input type="text" ng-model="widget.selectedChannel.title" class="nine cell" />
+				<label class="two cell"><i18n>rss.channel.title</i18n></label>
+				<input class="nine cell" type="text" ng-model="widget.selectedChannel.title" />
 			</div>
-			<div>
-				<label class="three cell"><i18n>rss.channel.new.content</i18n></label>
-				<textarea ng-model="widget.selectedChannel.content" rows="4" cols="50" class="nine cell"></textarea>
+
+			<div class="row">
+				<label class="two cell"><i18n>rss.channel.new.content</i18n></label>
+				<textarea class="nine cell" ng-model="widget.selectedChannel.content"></textarea>
 			</div>
-			<div class="row" ng-repeat="feed in widget.selectedChannel.feeds track by $index">
-				<label class="three cell"><i18n>rss.channel.new.feed</i18n> [[$index + 1]]</label>
-				<input type="text" ng-model="widget.selectedChannel.feeds[$index]" class="nine cell" />
+
+			<div class="flow-list">
+				<h3 class="two cell">Liste des flux<i18n>rss.channel.new.feed</i18n></h3>
+
+				<div class="row" ng-repeat="feed in widget.selectedChannel.feeds track by $index">
+					<label class="two cell"></label>
+					<input class="nine cell" placeholder="Saisissez votre nouveau flux RSS" type="text" ng-model="widget.selectedChannel.feeds[$index]" />
+					<span ng-click="widget.removeFeed([$index])" tooltip="rss.channel.feed.remove" class="rss-remove-button"></span>
+				</div>
+
+				<div class="row" ng-if="widget.display.addFeed">
+					<span ng-click="widget.addFeed()" tooltip="rss.channel.feed.add" class="rss-add-button"></span>
+				</div>
 			</div>
+
 			<div class="row">
 				<button class="right-magnet" ng-click="widget.saveChannel()" translate content="rss.channel.new.save"></button>
 				<button class="right-magnet cancel" ng-click="widget.closeEdition()" translate content="rss.channel.new.cancel"></button>
 			</div>
-			<div class="clear"></div>
 		</article>
 	</lightbox>
 </div>
