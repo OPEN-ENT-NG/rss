@@ -2,7 +2,7 @@ var rssWidget = model.widgets.findWidget('rss');
 rssWidget.channel = undefined;
 rssWidget.feeds = undefined;
 rssWidget.selectedChannel = undefined;
-rssWidget.totalFeeds = 5;
+rssWidget.totalFeeds = 5; // limit of feeds
 rssWidget.display = {
 	edition: false,
 	addFeed: false,
@@ -62,17 +62,22 @@ rssWidget.createChannel = function(callback){
 rssWidget.newChannel = function(){
 	rssWidget.selectedChannel = new Channel();
 	rssWidget.selectedChannel.feeds = new Array();
+	rssWidget.addFeed();
+	rssWidget.display.addFeed = true;
 	rssWidget.display.edition = true;
 };
 
 rssWidget.editChannel = function(){
+	rssWidget.selectedChannel = angular.copy(rssWidget.channel);
 	//(new feed) hide/show the add button
-	if(rssWidget.channel.feeds.length < rssWidget.totalFeeds){
+	if(rssWidget.selectedChannel.feeds.length < rssWidget.totalFeeds){
+		if(rssWidget.selectedChannel.feeds.length === 0){
+			rssWidget.addFeed();
+		}
 		rssWidget.display.addFeed = true;
 	}else{
 		rssWidget.display.addFeed = false;
 	}
-	rssWidget.selectedChannel = angular.copy(rssWidget.channel);
 	rssWidget.display.edition = true;
 };
 
@@ -96,6 +101,9 @@ rssWidget.removeFeed = function(index){
 	rssWidget.selectedChannel.feeds.splice(index, 1);
 	if(rssWidget.selectedChannel.feeds.length < rssWidget.totalFeeds){
 		rssWidget.display.addFeed = true;
+	}
+	if(rssWidget.selectedChannel.feeds.length === 0){
+		rssWidget.addFeed();
 	}
 }
 
