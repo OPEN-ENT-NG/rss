@@ -71,13 +71,13 @@ public class RssController extends MongoDbControllerHelper {
 	}
 
 	@Put("/channel/:id")
-	@SecuredAction(value = "channel.update", type = ActionType.RESOURCE)
+	@SecuredAction(value = "", type = ActionType.RESOURCE)
 	public void updatechannel(HttpServerRequest request) {
 		super.update(request);
 	}
 
 	@Delete("/channel/:id")
-	@SecuredAction(value = "channel.delete", type = ActionType.RESOURCE)
+	@SecuredAction(value = "", type = ActionType.RESOURCE)
 	public void deletechannel(HttpServerRequest request) {
 		final String id = request.params().get("id");
 		channelService.deleteChannel(id, defaultResponseHandler(request));
