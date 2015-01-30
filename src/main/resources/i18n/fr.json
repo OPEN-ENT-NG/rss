@@ -10,10 +10,13 @@
 	"rss.channel.new.title": "Edition de la liste des flux RSS",
 	"rss.channel.new.save": "Enregistrer",
 	"rss.channel.new.cancel": "Annuler",
+	"rss.channel.new.show": "Nombre de flux à afficher",
+	"rss.channel.new.feed.url": "Adresse du flux",
 	"rss.channel.edit": "Configurer les flux",
 	"rss.channel.feed.add": "Ajouter un flux",
-	"rss.channel.feed.remove": "Supprimer un flux",
+	"rss.channel.feed.remove": "Supprimer le flux",
 	"rss.channel.feed.read.more": "Voir plus",
 	"rss.channel.feed.update": "Actualiser",
-	"rss.channel.feeds.no.result": "Aucun résultat"
+	"rss.channel.feeds.no.result": "Aucun résultat",
+	"rss.channel.feeds.show": "Nombre d'articles à afficher"
 }

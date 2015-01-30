@@ -2,7 +2,9 @@ var rssWidget = model.widgets.findWidget('rss');
 rssWidget.channel = undefined;
 rssWidget.feeds = undefined;
 rssWidget.selectedChannel = undefined;
-rssWidget.totalFeeds = 5; // limit of feeds
+rssWidget.totalFeeds = 10; // limit of feeds
+rssWidget.defaultShow = 5; // limit of article by feeds
+rssWidget.showValues = [1,2,3,4,5,6,7,8,9,10];
 rssWidget.display = {
 	edition: false,
 	addFeed: false,
@@ -17,11 +19,14 @@ model.makePermanent(Channel, { fromApplication: 'rss' });
 rssWidget.updateFeeds = function(force){
 	rssWidget.feeds = [];
 	model.widgets.apply();
-	rssWidget.channel.feeds.forEach(function(url){
-		if(url !== null && url !== ""){
-			http().get('/rss/feed/items?url=' + encodeURIComponent(url) + '&force=' + force).done(function(feed){
-				if(feed !== undefined && feed.status === 200 && rssWidget.feeds.length < rssWidget.totalFeeds){
-					rssWidget.feeds.push(feed);
+	rssWidget.channel.feeds.forEach(function(feed){
+		if(feed.link !== null && feed.link !== ""){
+			http().get('/rss/feed/items?url=' + encodeURIComponent(feed.link) + '&force=' + force).done(function(result){
+				if(result !== undefined && result.status === 200 && rssWidget.feeds.length < rssWidget.totalFeeds){
+					if(result.Items !== undefined && feed.show != undefined && result.Items.length > feed.show){
+						result.Items = result.Items.slice(0, feed.show);
+					}
+					rssWidget.feeds.push(result);
 					model.widgets.apply();
 				}
 			});
@@ -91,7 +96,10 @@ rssWidget.configChannel = function(){
 };
 
 rssWidget.addFeed = function(){
-	rssWidget.selectedChannel.feeds.push("");
+	var feed = new Object();
+	feed.link = "";
+	feed.show = rssWidget.defaultShow;
+	rssWidget.selectedChannel.feeds.unshift(feed);
 	if(rssWidget.selectedChannel.feeds.length === rssWidget.totalFeeds){
 		rssWidget.display.addFeed = false;
 	}
@@ -115,10 +123,10 @@ rssWidget.closeEdition = function(){
 rssWidget.saveChannel = function(callback){
 	//remove the blank fields
 	var feeds = angular.copy(rssWidget.selectedChannel.feeds);
-	rssWidget.selectedChannel.feeds = [];
-	feeds.forEach(function(url){
-		if(url !== null && url.trim() !== ""){
-			rssWidget.selectedChannel.feeds.push(url);
+	rssWidget.selectedChannel.feeds = new Array();
+	feeds.forEach(function(feed){
+		if(feed.link !== null && feed.link.trim() !== ""){
+			rssWidget.selectedChannel.feeds.push(feed);
 		}
 	});
 	if(rssWidget.selectedChannel._id){
@@ -163,4 +171,16 @@ rssWidget.showOrHideItem = function(index){
 			rssWidget.display.selectedItem = index;
 		}
 	}
+};
+
+/* Util */
+
+rssWidget.formatDate = function(date){
+	var momentDate;
+	if (typeof date === "number"){
+		momentDate = moment.unix(date);
+	} else {
+		momentDate = moment(date);
+	}
+	return moment(momentDate, "YYYY-MM-DDTHH:mm:ss.SSSZ").lang('fr').format('dddd DD MMMM YYYY HH:mm');
 };
