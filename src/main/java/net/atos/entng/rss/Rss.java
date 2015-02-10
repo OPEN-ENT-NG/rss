@@ -2,6 +2,7 @@ package net.atos.entng.rss;
 
 import net.atos.entng.rss.controller.RssController;
 import net.atos.entng.rss.parser.RssParser;
+import net.atos.entng.rss.service.RssRepositoryEvents;
 
 import org.entcore.common.http.BaseServer;
 import org.entcore.common.http.filter.ShareAndOwner;
@@ -15,6 +16,10 @@ public class Rss extends BaseServer {
 	@Override
 	public void start() {
 		super.start();
+
+		// Subscribe to events published for transition
+		setRepositoryEvents(new RssRepositoryEvents());
+
 		addController(new RssController(vertx.eventBus()));
 		MongoDbConf.getInstance().setCollection(RSS_COLLECTION);
 		setDefaultResourceFilter(new ShareAndOwner());
