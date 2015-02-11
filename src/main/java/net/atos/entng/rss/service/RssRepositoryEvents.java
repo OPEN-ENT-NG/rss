@@ -54,10 +54,9 @@ public class RssRepositoryEvents implements RepositoryEvents {
 			@Override
 			public void handle(Either<String, JsonObject> event) {
 				if (event.isRight()) {
-					log.info("[RssRepositoryEvents][deleteUsers] The resources created by these users " + usersIds.toString() + " are deleted");
+					log.info("[RssRepositoryEvents][deleteUsers] The resources created by users are deleted");
 				} else {
-					log.error("[RssRepositoryEvents][deleteUsers] Error deleting the resources created by these users " + usersIds.toString()
-							+ ". Message : " + event.left().getValue());
+					log.error("[RssRepositoryEvents][deleteUsers] Error deleting the resources created by users. Message : " + event.left().getValue());
 				}
 			}
 		}));
