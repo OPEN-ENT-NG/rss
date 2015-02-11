@@ -11,7 +11,7 @@
 	"rss.channel.feed.edit": "Edition d'un flux",
 	"rss.channel.feed.remove": "Supprimer le flux",
 	"rss.channel.feed.save": "Enregistrer",
-	"rss.channel.feed.cancel": "Annuler",
+	"rss.channel.feed.cancel": "Retour",
 	
 	"rss.channel.feed.read.more": "Voir plus",
 	"rss.channel.feed.update": "Actualiser",
