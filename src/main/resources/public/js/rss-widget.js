@@ -1,22 +1,31 @@
 var rssWidget = model.widgets.findWidget('rss');
 rssWidget.channel = undefined;
 rssWidget.feeds = undefined;
-rssWidget.selectedChannel = undefined;
+rssWidget.selectedFeed = undefined;
+rssWidget.selectedFeedIndex = undefined;
 rssWidget.totalFeeds = 10; // limit of feeds
 rssWidget.defaultShow = 5; // limit of article by feeds
 rssWidget.showValues = [1,2,3,4,5,6,7,8,9,10];
 rssWidget.display = {
 	edition: false,
 	addFeed: false,
-	selectedFeed: undefined,
-	selectedItem: undefined
+	feedEdition: false
 };
 
-function Channel(){}
-model.makeModel(Channel);
+function Channel(){
+	this.feeds = new Array();
+};
+
+function Feed(){
+	this.title;
+	this.link;
+	this.show = rssWidget.defaultShow;
+};
+
+model.makeModels(Channel);
 model.makePermanent(Channel, { fromApplication: 'rss' });
 
-rssWidget.updateFeeds = function(force){
+rssWidget.loadFeeds = function(force){
 	rssWidget.feeds = [];
 	model.widgets.apply();
 	rssWidget.channel.feeds.forEach(function(feed){
@@ -37,48 +46,54 @@ rssWidget.updateFeeds = function(force){
 rssWidget.initFeeds = function(){
 	if(rssWidget.channel === undefined){
 		http().get('/rss/channels').done(function(channels){
-			if(channels.length > 0){
+			if(channels && channels.length > 0){
 				rssWidget.channel = channels[0];
-				model.widgets.apply();
-				rssWidget.updateFeeds(0); // 0 : default, from the cache
+			}else{
+				rssWidget.channel = new Channel();
 			}
+			model.widgets.apply();
+			rssWidget.loadFeeds(0); // 0 : default, from the cache
 		});
 	}
 	else{
-		rssWidget.updateFeeds(0); // 0 : default, from the cache
+		rssWidget.loadFeeds(0); // 0 : default, from the cache
 	}
 };
 
-// init channel & feeds
-rssWidget.initFeeds();
-
-rssWidget.createChannel = function(callback){
-	http().postJson('/rss/channel', rssWidget.selectedChannel).done(function(response){
-		rssWidget.channel = angular.copy(rssWidget.selectedChannel);
-		model.widgets.apply();
-		rssWidget.updateFeeds(0); // 0 : default, from the cache
-		if(typeof callback === 'function'){
-			callback();
-		}
-		rssWidget.closeEdition();
-	}.bind(this));
+rssWidget.createChannel = function(){
+	if(rssWidget.channel){
+		http().postJson('/rss/channel', rssWidget.channel).done(function(response){
+			rssWidget.channel._id = response._id;
+			model.widgets.apply();
+			rssWidget.loadFeeds(0); // 0 : default, from the cache
+		}.bind(this));
+	}else{
+		console.log("createChannel : channel is undefined");
+	}
 };
 
-rssWidget.newChannel = function(){
-	rssWidget.selectedChannel = new Channel();
-	rssWidget.selectedChannel.feeds = new Array();
-	rssWidget.addFeed();
-	rssWidget.display.addFeed = true;
-	rssWidget.display.edition = true;
+rssWidget.editChannel= function(){
+	if(rssWidget.channel && rssWidget.channel._id){
+		http().putJson('/rss/channel/' + rssWidget.channel._id, {feeds: rssWidget.channel.feeds}).done(function(response){
+			model.widgets.apply();
+			rssWidget.loadFeeds(0); // 0 : default, from the cache
+		});
+	}else{
+		console.log("editChannel : channel is undefined");
+	}
 };
 
-rssWidget.editChannel = function(){
-	rssWidget.selectedChannel = angular.copy(rssWidget.channel);
-	//(new feed) hide/show the add button
-	if(rssWidget.selectedChannel.feeds.length < rssWidget.totalFeeds){
-		if(rssWidget.selectedChannel.feeds.length === 0){
-			rssWidget.addFeed();
-		}
+rssWidget.saveChannel = function(){
+	if(rssWidget.channel._id){
+		rssWidget.editChannel();
+	}
+	else{
+		rssWidget.createChannel();
+	}
+};
+
+rssWidget.openConfig = function(){
+	if(rssWidget.channel.feeds.length < rssWidget.totalFeeds){
 		rssWidget.display.addFeed = true;
 	}else{
 		rssWidget.display.addFeed = false;
@@ -86,70 +101,51 @@ rssWidget.editChannel = function(){
 	rssWidget.display.edition = true;
 };
 
-rssWidget.configChannel = function(){
-	if(rssWidget.channel){
-		rssWidget.editChannel();
-	}
-	else{
-		rssWidget.newChannel();
-	}
-};
-
-rssWidget.addFeed = function(){
-	var feed = new Object();
-	feed.link = "";
-	feed.show = rssWidget.defaultShow;
-	rssWidget.selectedChannel.feeds.unshift(feed);
-	if(rssWidget.selectedChannel.feeds.length === rssWidget.totalFeeds){
-		rssWidget.display.addFeed = false;
-	}
-};
-
-rssWidget.removeFeed = function(index){
-	rssWidget.selectedChannel.feeds.splice(index, 1);
-	if(rssWidget.selectedChannel.feeds.length < rssWidget.totalFeeds){
-		rssWidget.display.addFeed = true;
-	}
-	if(rssWidget.selectedChannel.feeds.length === 0){
-		rssWidget.addFeed();
-	}
-}
-
-rssWidget.closeEdition = function(){
-	rssWidget.selectedChannel = undefined;
+rssWidget.closeConfig = function(){
 	rssWidget.display.edition = false;
 };
 
-rssWidget.saveChannel = function(callback){
-	//remove the blank fields
-	var feeds = angular.copy(rssWidget.selectedChannel.feeds);
-	rssWidget.selectedChannel.feeds = new Array();
-	feeds.forEach(function(feed){
-		if(feed.link !== null && feed.link.trim() !== ""){
-			rssWidget.selectedChannel.feeds.push(feed);
+rssWidget.saveFeed = function(){
+	if(rssWidget.selectedFeedIndex && rssWidget.validFeed(rssWidget.selectedFeed)){
+		if(rssWidget.selectedFeedIndex >= 0 && rssWidget.selectedFeedIndex < rssWidget.totalFeeds){
+			rssWidget.channel.feeds[rssWidget.selectedFeedIndex] = rssWidget.selectedFeed;
+		}else{
+			rssWidget.channel.feeds.push(rssWidget.selectedFeed);
 		}
-	});
-	if(rssWidget.selectedChannel._id){
-		rssWidget.saveModifications(callback);
+		rssWidget.saveChannel();
 	}
-	else{
-		rssWidget.createChannel(callback);
+	rssWidget.closeFeedEdition();
+};
+
+rssWidget.removeFeed = function(index){
+	if(index && index >= 0 && index < rssWidget.totalFeeds){
+		rssWidget.channel.feeds.splice(index, 1);
+		if(rssWidget.channel.feeds.length < rssWidget.totalFeeds){
+			rssWidget.display.addFeed = true;
+		}
+		rssWidget.saveChannel();
 	}
 };
 
-rssWidget.saveModifications= function(callback){
-	http().putJson('/rss/channel/' + rssWidget.selectedChannel._id, {title:  rssWidget.selectedChannel.title
-			, content: rssWidget.selectedChannel.content, feeds: rssWidget.selectedChannel.feeds}).done(function(e){
-		rssWidget.channel = angular.copy(rssWidget.selectedChannel);
-		model.widgets.apply();
-		rssWidget.updateFeeds(0); // 0 : default, from the cache
-		if(typeof callback === 'function'){
-			callback();
-		}
-		rssWidget.closeEdition();
-	});
+rssWidget.openFeedEdition = function(index){
+	if(index && index >= 0 && index < rssWidget.totalFeeds){
+		rssWidget.selectedFeed = angular.copy(rssWidget.channel.feeds[index]);
+		rssWidget.selectedFeedIndex = index;
+	}else{
+		rssWidget.selectedFeed = new Feed();
+		rssWidget.selectedFeedIndex = -1;
+	}
+	rssWidget.display.feedEdition = true;
 };
 
+rssWidget.closeFeedEdition = function(){
+	if(rssWidget.channel.feeds.length === rssWidget.totalFeeds){
+		rssWidget.display.addFeed = false;
+	}
+	rssWidget.display.feedEdition = false;
+	rssWidget.selectedFeed = undefined;
+	rssWidget.selectedFeedIndex = undefined;
+};
 
 rssWidget.showOrHideFeed = function(index){
 	if(rssWidget.display.selectedFeed === index){
@@ -173,6 +169,9 @@ rssWidget.showOrHideItem = function(index){
 	}
 };
 
+// init channel & feeds
+rssWidget.initFeeds();
+
 /* Util */
 
 rssWidget.formatDate = function(date){
@@ -183,4 +182,11 @@ rssWidget.formatDate = function(date){
 		momentDate = moment(date);
 	}
 	return moment(momentDate, "YYYY-MM-DDTHH:mm:ss.SSSZ").lang('fr').format('dddd DD MMMM YYYY HH:mm');
+};
+
+rssWidget.validFeed = function(feed){
+	if(feed && feed.title && feed.title.trim() !== "" && feed.link && feed.link.trim() !== ""){
+		return true;
+	}
+	return false;
 };

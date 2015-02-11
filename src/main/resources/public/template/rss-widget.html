@@ -1,13 +1,13 @@
 <div class="widget rss-widget">
 	<h1>
-		<span ng-click="widget.configChannel()" tooltip="rss.channel.config" class="rss-config-button"></span>
-		<span ng-if="widget.channel !== undefined && widget.channel.feeds.length > 0" ng-click="widget.updateFeeds(1)" tooltip="rss.channel.refresh" class="rss-refresh-button"></span>
+		<span ng-click="widget.openConfig()" tooltip="rss.channel.config" class="rss-config-button"></span>
+		<span ng-if="widget.channel !== undefined && widget.channel.feeds.length > 0" ng-click="widget.loadFeeds(1)" tooltip="rss.channel.refresh" class="rss-refresh-button"></span>
 	</h1>
 	<div class="message" ng-if="(widget.channel === undefined) || (widget.channel !== undefined && widget.channel.feeds.length === 0)">
 		<i18n>rss.channel.undefined</i18n>
 	</div>
 	<div class="message" ng-if="widget.channel !== undefined && widget.channel.feeds.length > 0 && widget.feeds.length === 0">
-		<i18n>rss.channel.feeds.no.result</i18n>
+		<i18n>rss.channel.feed.no.result</i18n>
 	</div>
 
 	<div class="fluxes" ng-if="widget.feeds !== undefined">
@@ -18,8 +18,8 @@
 				<div ng-repeat="item in feed.Items track by $index" class="rss-article">
 					<a ng-click="widget.showOrHideItem([[$index]])">
 						[[item.title]]
-						<div ng-show="widget.display.selectedItem === [[$index]]" class="selected-item-date">[[widget.formatDate(item.pubDate)]]</div>
 					</a>
+					<div class="selected-item-date">[[widget.formatDate(item.pubDate)]]</div>
 					<div ng-show="widget.display.selectedItem === [[$index]]" class="selected-item">
 						<p ng-bind-html="item.description"></p>
 						<a href="[[item.link]]" target="_blank"><i18n>rss.channel.feed.read.more</i18n></a>
@@ -29,30 +29,57 @@
 		</div>
 	</div>
 
-	<lightbox show="widget.display.edition" on-close="widget.closeEdition()">
-		<h2><i18n>rss.channel.new.title</i18n></h2>
+	<lightbox show="widget.display.edition" on-close="widget.closeConfig()">
+		<h2>
+			<i18n ng-if="!widget.display.feedEdition">rss.channel.feed.list</i18n>
+			<i18n ng-if="widget.display.feedEdition">rss.channel.feed.edit</i18n>
+		</h2>
 		<div class="twelve cell rss-config">
-			<div class="row div-rss-add-button" ng-if="widget.display.addFeed">
-				<span ng-click="widget.addFeed()" tooltip="rss.channel.feed.add" class="rss-add-button"></span>
-			</div>
-			<div class="flow-list">
-				<div ng-repeat="feed in widget.selectedChannel.feeds track by $index" class="feed-def">
-					<div class="row">
-						<label class="three cell"><i18n>rss.channel.new.feed.url</i18n></label>
-						<input class="eight cell" placeholder="Saisissez votre nouveau flux RSS" type="text" ng-model="widget.selectedChannel.feeds[$index].link" />
-						<span ng-click="widget.removeFeed([$index])" tooltip="rss.channel.feed.remove" class="rss-remove-button"></span>
-					</div>
-					<div class="row">
-						<label class="three cell"><i18n>rss.channel.feeds.show</i18n></label>
-						<select class="one cell" ng-options="n for n in widget.showValues" ng-model="widget.selectedChannel.feeds[$index].show"></select>
-					</div>
+			<div ng-if="!widget.display.feedEdition">
+				<span feeds-list ng-if="widget.channel.feeds.length === 0"><i18n>rss.channel.undefined</i18n></span>
+				<table class="list-view twelve feeds-content" ng-if="widget.channel.feeds.length > 0">
+					<thead>
+						<tr>
+							<th><i18n>rss.channel.feed.title</i18n></th>
+							<th><i18n>rss.channel.feed.show</i18n></th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="feed in widget.channel.feeds track by $index" ng-class="{ selected : widget.display.feedEdition && $index === widget.selectedFeedIndex }">
+							<td ng-click="widget.openFeedEdition([$index])">[[widget.channel.feeds[$index].title]]</td>
+							<td ng-click="widget.openFeedEdition([$index])">[[widget.channel.feeds[$index].show]]</td>
+							<td class="one cell rss-remove-button" ng-click="widget.removeFeed([$index])"></td>
+						</tr>
+					</tbody>
+				</table>
+				
+				<div ng-if="widget.display.addFeed">
+					<button class="right-magnet cancel" ng-click="widget.openFeedEdition()" translate content="rss.channel.feed.add"></button>
 				</div>
 			</div>
-
-			<div class="row">
-				<button class="right-magnet" ng-click="widget.saveChannel()" translate content="rss.channel.new.save"></button>
-				<button class="right-magnet cancel" ng-click="widget.closeEdition()" translate content="rss.channel.new.cancel"></button>
+			
+			<div ng-if="widget.display.feedEdition">
+				<article class="twelve cell">
+					<div class="row">
+						<label class="three cell"><i18n>rss.channel.feed.title</i18n></label>
+						<input class="eight cell" placeholder="Saisissez le titre du nouveau flux RSS" type="text" ng-model="widget.selectedFeed.title" />
+					</div>
+					<div class="row">
+						<label class="three cell"><i18n>rss.channel.feed.url</i18n></label>
+						<input class="eight cell" placeholder="Saisissez l'Url du nouveau flux RSS" type="text" ng-model="widget.selectedFeed.link" />
+					</div>
+					<div class="row">
+						<label class="three cell"><i18n>rss.channel.feed.show</i18n></label>
+						<select class="one cell" ng-options="n for n in widget.showValues" ng-model="widget.selectedFeed.show"></select>
+					</div>
+				</article>
+				<div class="row">
+					<button class="right-magnet" ng-click="widget.saveFeed()" translate content="rss.channel.feed.save"></button>
+					<button class="right-magnet cancel" ng-click="widget.closeFeedEdition()" translate content="rss.channel.feed.cancel"></button>
+				</div>
 			</div>
+			
 		</div>
 	</lightbox>
 </div>

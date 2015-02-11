@@ -1,22 +1,19 @@
 {
-	"rss.head.title": "Rss",
-	"rss.channel.title": "Titre ",
 	"rss.channel.config": "Configurer",
 	"rss.channel.refresh": "Rafra&icirc;chir",
 	"rss.channel.undefined": "Aucun flux configuré",
-	"rss.channel.new.content": "Description ",
-	"rss.channel.new.feed": "RSS ",
-	"rss.channel.new": "Configurer les flux",
-	"rss.channel.new.title": "Edition de la liste des flux RSS",
-	"rss.channel.new.save": "Enregistrer",
-	"rss.channel.new.cancel": "Annuler",
-	"rss.channel.new.show": "Nombre de flux à afficher",
-	"rss.channel.new.feed.url": "Adresse du flux",
-	"rss.channel.edit": "Configurer les flux",
+	
+	"rss.channel.feed.url": "Adresse du flux",
+	"rss.channel.feed.title": "Titre",
+	"rss.channel.feed.show": "Nombre d'articles à afficher",
 	"rss.channel.feed.add": "Ajouter un flux",
+	"rss.channel.feed.list": "Liste des flux",
+	"rss.channel.feed.edit": "Edition d'un flux",
 	"rss.channel.feed.remove": "Supprimer le flux",
+	"rss.channel.feed.save": "Enregistrer",
+	"rss.channel.feed.cancel": "Annuler",
+	
 	"rss.channel.feed.read.more": "Voir plus",
 	"rss.channel.feed.update": "Actualiser",
-	"rss.channel.feeds.no.result": "Aucun résultat",
-	"rss.channel.feeds.show": "Nombre d'articles à afficher"
+	"rss.channel.feed.no.result": "Aucun résultat"
 }
