@@ -25,57 +25,81 @@ public class RssParserHandler extends DefaultHandler {
 
 	@Override
 	public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException{
-		if(qName.equals("channel")){
-			parent = true;
-			feed = new Feed();
-		}else if(qName.equals("rss")){
-			buffer = new StringBuffer();
-		}else if(qName.equals("item")){
-			parent = false;
-			item = new Item();
-		}else {
-			buffer = new StringBuffer();
+		if(qName != null){
+			if(qName.equals("channel")){
+				parent = true;
+				feed = new Feed();
+			}else if(qName.equals("rss")){
+				buffer = new StringBuffer();
+			}else if(qName.equals("item")){
+				parent = false;
+				item = new Item();
+			}else {
+				buffer = new StringBuffer();
+			}
 		}
 	}
 
 	@Override
 	public void endElement(String uri, String localName, String qName) throws SAXException{
-		if(qName.equals("rss")){
-		}else if(qName.equals("item")){
-			feed.addItem(item);
-			item = null;
-			buffer = null;
-		}else if(qName.equals("title")){
-			if(parent){
-				feed.setTitle(buffer.toString().trim());
-			}else{
-				item.setTitle(buffer.toString().trim());
+		if(qName != null){
+			if(qName.equals("rss")){
+			}else if(qName.equals("item")){
+				if(item != null && feed != null){
+					feed.addItem(item);
+					item = null;
+				}
+				buffer = null;
+			}else if(qName.equals("title")){
+				if(buffer != null){
+					if(parent){
+						if(feed != null)
+							feed.setTitle(buffer.toString().trim());
+					}else{
+						if(item != null)
+							item.setTitle(buffer.toString().trim());
+					}
+					buffer = null;
+				}
+			}else if(qName.equals("link")){
+				if(buffer != null){
+					if(parent){
+						if(feed != null)
+							feed.setLink(buffer.toString().trim());
+					}else{
+						if(item != null)
+							item.setLink(buffer.toString().trim());
+					}
+					buffer = null;
+				}
+			}else if(qName.equals("description")){
+				if(buffer != null){
+					if(parent){
+						if(feed != null)
+							feed.setDescription(buffer.toString().trim());
+					}else{
+						if(item != null)
+							item.setDescription(buffer.toString().trim());
+					}
+					buffer = null;
+				}
+			}else if(qName.equals("pubDate")){
+				if(buffer != null){
+					if(parent){
+						if(feed != null)
+							feed.setPubDate(buffer.toString().trim());
+					}else{
+						if(item != null)
+							item.setPubDate(buffer.toString().trim());
+					}
+					buffer = null;
+				}
+			}else if(qName.equals("language")){
+				if(buffer != null && feed != null){
+					feed.setLanguage(buffer.toString().trim());
+					buffer = null;
+				}
 			}
-			buffer = null;
-		}else if(qName.equals("link")){
-			if(parent){
-				feed.setLink(buffer.toString().trim());
-			}else{
-				item.setLink(buffer.toString().trim());
-			}
-			buffer = null;
-		}else if(qName.equals("description")){
-			if(parent){
-				feed.setDescription(buffer.toString().trim());
-			}else{
-				item.setDescription(buffer.toString().trim());
-			}
-			buffer = null;
-		}else if(qName.equals("pubDate")){
-			if(parent){
-				feed.setPubDate(buffer.toString().trim());
-			}else{
-				item.setPubDate(buffer.toString().trim());
-			}
-			buffer = null;
-		}else if(qName.equals("language")){
-			feed.setLanguage(buffer.toString().trim());
-			buffer = null;
 		}
 	}
 
