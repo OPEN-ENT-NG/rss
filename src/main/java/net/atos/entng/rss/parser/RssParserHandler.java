@@ -111,7 +111,7 @@ public class RssParserHandler extends DefaultHandler {
 
 	@Override
 	public void endDocument() throws SAXException {
-		JsonObject results = feed.toJson();
+		JsonObject results = (feed != null) ? feed.toJson() : new JsonObject();
 		results.putNumber("status", 200);
 		handler.handle(results);
 	}
