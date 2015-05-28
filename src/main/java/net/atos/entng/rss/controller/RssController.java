@@ -90,8 +90,10 @@ public class RssController extends MongoDbControllerHelper {
 	public void getfeedItems(final HttpServerRequest request) {
 		final String url = request.params().get("url");
 		final String force = request.params().get("force");
-		if(url != null && url.trim() != ""){
+		if(url != null && !url.trim().isEmpty()){
 			feedService.getItems(request, url, force, defaultResponseHandler(request));
+		} else {
+			badRequest(request, "invalid.url");
 		}
 	}
 
