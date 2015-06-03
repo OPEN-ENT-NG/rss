@@ -94,6 +94,17 @@ public class RssParserHandler extends DefaultHandler {
 					}
 					buffer = null;
 				}
+			}else if(qName.equals("dc:date")){
+				if(buffer != null){
+					if(parent){
+						if(feed != null && feed.getPubDate() == null)
+							feed.setPubDate(buffer.toString().trim());
+					}else{
+						if(item != null && item.getPubDate() == null)
+							item.setPubDate(buffer.toString().trim());
+					}
+					buffer = null;
+				}
 			}else if(qName.equals("language")){
 				if(buffer != null && feed != null){
 					feed.setLanguage(buffer.toString().trim());
