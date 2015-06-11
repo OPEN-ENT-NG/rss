@@ -23,7 +23,6 @@ function Feed(){
 };
 
 model.makeModels(Channel);
-model.makePermanent(Channel, { fromApplication: 'rss' });
 
 rssWidget.loadFeeds = function(force){
 	rssWidget.feeds = [];
