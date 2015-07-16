@@ -49,16 +49,18 @@
 						<tr ng-repeat="feed in widget.channel.feeds track by $index" ng-class="{ selected : widget.display.feedEdition && $index === widget.selectedFeedIndex }">
 							<td ng-click="widget.openFeedEdition([$index])">[[widget.channel.feeds[$index].title]]</td>
 							<td ng-click="widget.openFeedEdition([$index])">[[widget.channel.feeds[$index].show]]</td>
-							<td class="one cell rss-remove-button" ng-click="widget.removeFeed([$index])"></td>
+							<td class="one cell">
+								<i class="close" ng-click="widget.removeFeed([$index])"></i>
+							</td>
 						</tr>
 					</tbody>
 				</table>
-				
+
 				<div ng-if="widget.display.addFeed">
 					<button class="right-magnet cancel" ng-click="widget.openFeedEdition()" translate content="rss.channel.feed.add"></button>
 				</div>
 			</div>
-			
+
 			<div ng-if="widget.display.feedEdition">
 				<article class="twelve cell">
 					<div class="row">
@@ -79,7 +81,7 @@
 					<button class="right-magnet cancel" ng-click="widget.closeFeedEdition()" translate content="rss.channel.feed.cancel"></button>
 				</div>
 			</div>
-			
+
 		</div>
 	</lightbox>
 </div>
