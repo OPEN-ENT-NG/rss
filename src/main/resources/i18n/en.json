@@ -14,6 +14,5 @@
     "rss.channel.feed.url": "Adresse du flux",
     "rss.channel.refresh": "Rafra&icirc;chir",
     "rss.channel.undefined": "Aucun flux configuré",
-    "rss.head.title": "Rss",
-    "rss.title": "Rss"
+    "rss.title": "RSS"
 }
