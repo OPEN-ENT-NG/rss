@@ -1,4 +1,4 @@
-var rssWidget = model.widgets.findWidget('rss');
+var rssWidget = model.widgets.findWidget('rss-widget');
 rssWidget.channel = undefined;
 rssWidget.feeds = undefined;
 rssWidget.selectedFeed = undefined;
