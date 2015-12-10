@@ -1,4 +1,5 @@
 {
+    "rss-widget": "Rss",
     "rss.channel.config": "Configurer",
     "rss.channel.feed.add": "Ajouter un flux",
     "rss.channel.feed.cancel": "Retour",
