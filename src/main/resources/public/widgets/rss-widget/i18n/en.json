@@ -1,0 +1,19 @@
+{
+    "rss-widget": "Rss",
+    "rss.channel.config": "Configurer",
+    "rss.channel.feed.add": "Ajouter un flux",
+    "rss.channel.feed.cancel": "Retour",
+    "rss.channel.feed.edit": "Edition d'un flux",
+    "rss.channel.feed.list": "Liste des flux",
+    "rss.channel.feed.no.result": "Aucun résultat",
+    "rss.channel.feed.read.more": "Voir plus",
+    "rss.channel.feed.remove": "Supprimer le flux",
+    "rss.channel.feed.save": "Enregistrer",
+    "rss.channel.feed.show": "Nombre d'articles à afficher",
+    "rss.channel.feed.title": "Titre",
+    "rss.channel.feed.update": "Actualiser",
+    "rss.channel.feed.url": "Adresse du flux",
+    "rss.channel.refresh": "Rafra&icirc;chir",
+    "rss.channel.undefined": "Aucun flux configuré",
+    "rss.title": "RSS"
+}
