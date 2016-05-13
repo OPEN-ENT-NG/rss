@@ -29,13 +29,13 @@ public class RssRepositoryEvents implements RepositoryEvents {
 
 	@Override
 	public void deleteGroups(JsonArray groups) {
-		// TODO Implement deleteGroups
+		// FIXME : deleteGroups is not relevant for RSS
 		log.warn("[RssRepositoryEvents] deleteGroups is not implemented");
 	}
 
 	@Override
 	public void deleteUsers(JsonArray users) {
-		// TODO make the users anonymous
+        //FIXME: anonymization is not relevant
 		if(users == null || users.size() == 0) {
 			log.warn("[RssRepositoryEvents][deleteUsers] JsonArray users is null or empty");
 			return;
