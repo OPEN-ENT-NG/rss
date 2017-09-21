@@ -178,9 +178,9 @@ rssWidget.formatDate = function(date){
 	if (typeof date === "number"){
 		momentDate = moment.unix(date);
 	} else {
-		momentDate = moment(date);
+		momentDate = moment(date, undefined, 'en');
 	}
-	return moment(momentDate, "YYYY-MM-DDTHH:mm:ss.SSSZ").lang('fr').format('dddd DD MMMM YYYY HH:mm');
+	return momentDate.lang('fr').format('dddd DD MMMM YYYY HH:mm');
 };
 
 rssWidget.validFeed = function(feed){
