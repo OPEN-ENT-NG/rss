@@ -21,14 +21,16 @@ package net.atos.entng.rss.service;
 
 import net.atos.entng.rss.parser.RssParser;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.json.JsonObject;
+import io.vertx.core.Handler;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.json.JsonObject;
 
 import fr.wseduc.webutils.Either;
 import fr.wseduc.webutils.http.Renders;
+
+import static fr.wseduc.webutils.Utils.handlerToAsyncHandler;
 
 public class FeedServiceImpl implements FeedService {
 
@@ -41,16 +43,16 @@ public class FeedServiceImpl implements FeedService {
 	@Override
 	public void getItems(final HttpServerRequest request, final String url, String force, Handler<Either<String, JsonObject>> JsonObjectHandler) {
 		JsonObject message = new JsonObject();
-		message.putString("url", url);
-		message.putString("force", force);
-		message.putString("action", RssParser.ACTION_GET);
-		eb.send(RssParser.PARSER_ADDRESS, message, new Handler<Message<JsonObject>>(){
+		message.put("url", url);
+		message.put("force", force);
+		message.put("action", RssParser.ACTION_GET);
+		eb.send(RssParser.PARSER_ADDRESS, message, handlerToAsyncHandler(new Handler<Message<JsonObject>>(){
 			@Override
 			public void handle(Message<JsonObject> reply) {
 				JsonObject response = reply.body();
 				Integer status = response.getInteger("status");
 				Renders.renderJson(request, response, status);
 			}
-		});
+		}));
 	}
 }

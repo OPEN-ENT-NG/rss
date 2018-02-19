@@ -1,5 +1,5 @@
   	{
-  		"name": "net.atos~rss~0.11-SNAPSHOT",
+  		"name": "net.atos~rss~1.0-SNAPSHOT",
   		"config": {
   		  "main" : "net.atos.entng.rss.Rss",
   		  "port" : 8028,

@@ -29,11 +29,11 @@ import fr.wseduc.webutils.Either;
 
 import org.entcore.common.mongodb.MongoDbResult;
 import org.entcore.common.user.RepositoryEvents;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
+import io.vertx.core.Handler;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 public class RssRepositoryEvents implements RepositoryEvents {
 
@@ -62,7 +62,7 @@ public class RssRepositoryEvents implements RepositoryEvents {
 
 		final String [] usersIds = new String[users.size()];
 		for (int i = 0; i < users.size(); i++) {
-			JsonObject j = users.get(i);
+			JsonObject j = users.getJsonObject(i);
 			usersIds[i] = j.getString("id");
 		}
 
