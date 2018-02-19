@@ -19,7 +19,7 @@
 
 package net.atos.entng.rss.model;
 
-import org.vertx.java.core.json.JsonObject;
+import io.vertx.core.json.JsonObject;
 
 public class RssParserCacheObject {
     private long lastUse;

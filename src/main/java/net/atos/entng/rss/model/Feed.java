@@ -22,8 +22,8 @@ package net.atos.entng.rss.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 public class Feed {
 	private String title;
@@ -80,18 +80,18 @@ public class Feed {
 
 	public JsonObject toJson(){
 		JsonObject result = new JsonObject();
-		result.putString("title", title);
-		result.putString("link", link);
-		result.putString("description", description);
-		result.putString("pubDate", pubDate);
-		result.putString("language", language);
+		result.put("title", title);
+		result.put("link", link);
+		result.put("description", description);
+		result.put("pubDate", pubDate);
+		result.put("language", language);
 
 		JsonArray itemsJson = new JsonArray();
 		for(Item i : this.items){
 			itemsJson.add(i.toJson());
 		}
 
-		result.putArray("Items", itemsJson);
+		result.put("Items", itemsJson);
 
 		return result;
 	}

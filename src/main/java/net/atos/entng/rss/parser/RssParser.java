@@ -25,23 +25,23 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import net.atos.entng.rss.service.FeedServiceImpl;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.logging.Logger;
-import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.platform.Verticle;
+import io.vertx.core.Handler;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import fr.wseduc.webutils.Either;
 
-public class RssParser extends Verticle implements Handler<Message<JsonObject>> {
+public class RssParser extends AbstractVerticle implements Handler<Message<JsonObject>> {
 
 	private RssParserCache rssParserCache;
-	private long cleanTimeout;
 	private static final Logger log = LoggerFactory.getLogger(FeedServiceImpl.class);
 	public static final long DEFAULT_CLEAN_TIMEOUT = 30; // Minutes
 	public static final String PARSER_ADDRESS = "rss.parser";
@@ -49,21 +49,25 @@ public class RssParser extends Verticle implements Handler<Message<JsonObject>> 
 	public static final String ACTION_GET = "get";
 
 	@Override
-	public void start() {
+	public void start() throws Exception {
 		super.start();
-		cleanTimeout = container.config().getLong("clean-timeout", DEFAULT_CLEAN_TIMEOUT) * 60000;
-		vertx.eventBus().registerHandler("rss.parser", this);
+		final long cleanTimeout = config().getLong("clean-timeout", DEFAULT_CLEAN_TIMEOUT) * 60000;
+		vertx.eventBus().localConsumer("rss.parser", this);
 		rssParserCache = new RssParserCache();
 		vertx.setPeriodic(cleanTimeout, new Handler<Long>() {
 			@Override
 			public void handle(Long cleanTimeout) {
 				JsonObject message = new JsonObject();
-				message.putString("action", RssParser.ACTION_CLEANUP);
-				message.putNumber("cleanTimeout", cleanTimeout);
-				vertx.eventBus().send(RssParser.PARSER_ADDRESS, message, new Handler<Message<String>>() {
+				message.put("action", RssParser.ACTION_CLEANUP);
+				message.put("cleanTimeout", cleanTimeout);
+				vertx.eventBus().send(RssParser.PARSER_ADDRESS, message, new Handler<AsyncResult<Message<String>>>() {
 					@Override
-					public void handle(Message<String> message) {
-						log.info("Received reply: " + message.body());
+					public void handle(AsyncResult<Message<String>> ar) {
+						if (ar.succeeded()) {
+							log.info("Received reply: " + ar.result().body());
+						} else {
+							log.error("Error Receive reply.", ar.cause());
+						}
 					}
 				});
 			}
@@ -90,10 +94,10 @@ public class RssParser extends Verticle implements Handler<Message<JsonObject>> 
 							JsonObject results = new JsonObject();
 							if(event.isRight()){
 								results = event.right().getValue();
-								results.putNumber("status", 200); // OK
+								results.put("status", 200); // OK
 							}
 							else {
-								results.putNumber("status", 204); // KO
+								results.put("status", 204); // KO
 								log.error("[FeedServiceImpl][getItems] Error : " + event.left().getValue());
 							}
 							message.reply(results);
@@ -113,11 +117,8 @@ public class RssParser extends Verticle implements Handler<Message<JsonObject>> 
 							}
 						});
 						parser.parse(url, handler);
-					} catch (SAXException | IOException se) {
-						results.putNumber("status", 204);
-						message.reply(results);
-					} catch (ParserConfigurationException pce) {
-						results.putNumber("status", 204);
+					} catch (SAXException | IOException | ParserConfigurationException se) {
+						results.put("status", 204);
 						message.reply(results);
 					}
 				}

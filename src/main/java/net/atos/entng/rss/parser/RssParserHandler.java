@@ -22,8 +22,8 @@ package net.atos.entng.rss.parser;
 import net.atos.entng.rss.model.Feed;
 import net.atos.entng.rss.model.Item;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonObject;
+import io.vertx.core.Handler;
+import io.vertx.core.json.JsonObject;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -142,7 +142,7 @@ public class RssParserHandler extends DefaultHandler {
 	@Override
 	public void endDocument() throws SAXException {
 		JsonObject results = (feed != null) ? feed.toJson() : new JsonObject();
-		results.putNumber("status", 200);
+		results.put("status", 200);
 		handler.handle(results);
 	}
 }

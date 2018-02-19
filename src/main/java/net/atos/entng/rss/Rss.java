@@ -19,6 +19,7 @@
 
 package net.atos.entng.rss;
 
+import io.vertx.core.DeploymentOptions;
 import net.atos.entng.rss.controller.RssController;
 import net.atos.entng.rss.parser.RssParser;
 import net.atos.entng.rss.service.RssRepositoryEvents;
@@ -33,7 +34,7 @@ public class Rss extends BaseServer {
 	public static final String RSS_COLLECTION = "rss.channels";
 
 	@Override
-	public void start() {
+	public void start() throws Exception {
 		super.start();
 
 		// Subscribe to events published for transition
@@ -42,7 +43,8 @@ public class Rss extends BaseServer {
 		addController(new RssController(vertx.eventBus()));
 		MongoDbConf.getInstance().setCollection(RSS_COLLECTION);
 		setDefaultResourceFilter(new ShareAndOwner());
-		container.deployWorkerVerticle(RssParser.class.getName(), config);
+		vertx.deployVerticle(RssParser.class.getName(), new DeploymentOptions()
+				.setWorker(true).setConfig(config));
 	}
 
 }

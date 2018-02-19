@@ -19,7 +19,7 @@
 
 package net.atos.entng.rss.model;
 
-import org.vertx.java.core.json.JsonObject;
+import io.vertx.core.json.JsonObject;
 
 public class Item {
 	private String title;
@@ -54,10 +54,10 @@ public class Item {
 
 	public JsonObject toJson(){
 		JsonObject result = new JsonObject();
-		result.putString("title", title);
-		result.putString("link", link);
-		result.putString("description", description);
-		result.putString("pubDate", pubDate);
+		result.put("title", title);
+		result.put("link", link);
+		result.put("description", description);
+		result.put("pubDate", pubDate);
 		return result;
 	}
 }
