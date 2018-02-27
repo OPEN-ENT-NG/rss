@@ -60,9 +60,9 @@ public class RssParser extends AbstractVerticle implements Handler<Message<JsonO
 				JsonObject message = new JsonObject();
 				message.put("action", RssParser.ACTION_CLEANUP);
 				message.put("cleanTimeout", cleanTimeout);
-				vertx.eventBus().send(RssParser.PARSER_ADDRESS, message, new Handler<AsyncResult<Message<String>>>() {
+				vertx.eventBus().send(RssParser.PARSER_ADDRESS, message, new Handler<AsyncResult<Message<JsonObject>>>() {
 					@Override
-					public void handle(AsyncResult<Message<String>> ar) {
+					public void handle(AsyncResult<Message<JsonObject>> ar) {
 						if (ar.succeeded()) {
 							log.info("Received reply: " + ar.result().body());
 						} else {
@@ -83,6 +83,7 @@ public class RssParser extends AbstractVerticle implements Handler<Message<JsonO
 			case ACTION_CLEANUP:
 				long cleanTimeout = msg.getLong("cleanTimeout", DEFAULT_CLEAN_TIMEOUT);
 				rssParserCache.cleanUp(cleanTimeout);
+				message.reply(new JsonObject().put("status", "ok"));
 				break;
 			case ACTION_GET:
 				String force = msg.getString("force", "0");
