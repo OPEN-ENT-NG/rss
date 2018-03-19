@@ -12,12 +12,12 @@
 	</div>
 
 	<div class="fluxes" ng-if="widget.feeds !== undefined">
-		<div ng-repeat="feed in widget.feeds track by $index | limitTo:widget.channel.show" class="rss-flux">
-			<a ng-click="widget.showOrHideFeed([[$index]])">[[feed.title]]</a>
+		<div ng-repeat="feed in widget.feeds track by $index" class="rss-flux">
+			<a ng-click="widget.showOrHideFeed($index)">[[feed.title]]</a>
 			<p ng-show="widget.display.selectedFeed === [[$index]]" ng-bind-html="feed.description"></p>
 			<div ng-show="widget.display.selectedFeed === [[$index]]">
 				<div ng-repeat="item in feed.Items track by $index" class="rss-article">
-					<a ng-click="widget.showOrHideItem([[$index]])">
+					<a ng-click="widget.showOrHideItem($index)">
 						[[item.title]]
 					</a>
 					<div class="selected-item-date">[[widget.formatDate(item.pubDate)]]</div>
