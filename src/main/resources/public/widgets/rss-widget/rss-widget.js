@@ -28,9 +28,11 @@ rssWidget.loadFeeds = function(force){
 	rssWidget.feeds = [];
 	model.widgets.apply();
 	rssWidget.channel.feeds.forEach(function(feed){
+		var mytitle = feed.title;
 		if(feed.link !== null && feed.link !== ""){
 			http().get('/rss/feed/items?url=' + encodeURIComponent(feed.link) + '&force=' + force).done(function(result){
-				if(result !== undefined && result.status === 200 && rssWidget.feeds.length < rssWidget.totalFeeds){
+				if (!result.title)result.title = mytitle;
+                if(result !== undefined && result.status === 200 && rssWidget.feeds.length < rssWidget.totalFeeds){
 					if(result.Items !== undefined && feed.show != undefined && result.Items.length > feed.show){
 						result.Items = result.Items.slice(0, feed.show);
 					}
