@@ -64,7 +64,9 @@ public class RssParser extends AbstractVerticle implements Handler<Message<JsonO
 					@Override
 					public void handle(AsyncResult<Message<JsonObject>> ar) {
 						if (ar.succeeded()) {
-							log.info("Received reply: " + ar.result().body());
+							if (log.isDebugEnabled()) {
+								log.debug("Received reply: " + ar.result().body());
+							}
 						} else {
 							log.error("Error Receive reply.", ar.cause());
 						}
