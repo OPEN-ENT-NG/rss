@@ -19,6 +19,7 @@
 
 package net.atos.entng.rss.service;
 
+import io.vertx.core.AsyncResult;
 import net.atos.entng.rss.parser.RssParser;
 
 import io.vertx.core.Handler;
@@ -29,8 +30,6 @@ import io.vertx.core.json.JsonObject;
 
 import fr.wseduc.webutils.Either;
 import fr.wseduc.webutils.http.Renders;
-
-import static fr.wseduc.webutils.Utils.handlerToAsyncHandler;
 
 public class FeedServiceImpl implements FeedService {
 
@@ -46,13 +45,17 @@ public class FeedServiceImpl implements FeedService {
 		message.put("url", url);
 		message.put("force", force);
 		message.put("action", RssParser.ACTION_GET);
-		eb.send(RssParser.PARSER_ADDRESS, message, handlerToAsyncHandler(new Handler<Message<JsonObject>>(){
+		eb.send(RssParser.PARSER_ADDRESS, message, new Handler<AsyncResult<Message<JsonObject>>>(){
 			@Override
-			public void handle(Message<JsonObject> reply) {
-				JsonObject response = reply.body();
-				Integer status = response.getInteger("status");
-				Renders.renderJson(request, response, status);
+			public void handle(AsyncResult<Message<JsonObject>> ar) {
+				if (ar.succeeded()) {
+					JsonObject response = ar.result().body();
+					Integer status = response.getInteger("status");
+					Renders.renderJson(request, response, status);
+				} else {
+					Renders.renderJson(request, new JsonObject().put("status", 204), 204);
+				}
 			}
-		}));
+		});
 	}
 }
