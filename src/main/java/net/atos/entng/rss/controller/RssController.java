@@ -23,6 +23,7 @@ import static org.entcore.common.http.response.DefaultResponseHandler.arrayRespo
 import static org.entcore.common.http.response.DefaultResponseHandler.defaultResponseHandler;
 import static org.entcore.common.http.response.DefaultResponseHandler.notEmptyResponseHandler;
 
+import io.vertx.core.json.JsonObject;
 import net.atos.entng.rss.Rss;
 import net.atos.entng.rss.service.ChannelService;
 import net.atos.entng.rss.service.ChannelServiceMongoImpl;
@@ -110,7 +111,15 @@ public class RssController extends MongoDbControllerHelper {
 		final String url = request.params().get("url");
 		final String force = request.params().get("force");
 		if(url != null && !url.trim().isEmpty()){
-			feedService.getItems(request, url, force, defaultResponseHandler(request));
+			feedService.getItems(request, url, force, ar -> {
+				if (ar.succeeded()) {
+					JsonObject response = ar.result().body();
+					Integer status = response.getInteger("status");
+					renderJson(request, response, status);
+				} else {
+					renderJson(request, new JsonObject().put("status", 204), 204);
+				}
+			});
 		} else {
 			badRequest(request, "invalid.url");
 		}

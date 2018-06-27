@@ -40,22 +40,11 @@ public class FeedServiceImpl implements FeedService {
 	}
 
 	@Override
-	public void getItems(final HttpServerRequest request, final String url, String force, Handler<Either<String, JsonObject>> JsonObjectHandler) {
+	public void getItems(final HttpServerRequest request, final String url, String force, Handler<AsyncResult<Message<JsonObject>>> JsonObjectHandler) {
 		JsonObject message = new JsonObject();
 		message.put("url", url);
 		message.put("force", force);
 		message.put("action", RssParser.ACTION_GET);
-		eb.send(RssParser.PARSER_ADDRESS, message, new Handler<AsyncResult<Message<JsonObject>>>(){
-			@Override
-			public void handle(AsyncResult<Message<JsonObject>> ar) {
-				if (ar.succeeded()) {
-					JsonObject response = ar.result().body();
-					Integer status = response.getInteger("status");
-					Renders.renderJson(request, response, status);
-				} else {
-					Renders.renderJson(request, new JsonObject().put("status", 204), 204);
-				}
-			}
-		});
+		eb.send(RssParser.PARSER_ADDRESS, message, JsonObjectHandler);
 	}
 }

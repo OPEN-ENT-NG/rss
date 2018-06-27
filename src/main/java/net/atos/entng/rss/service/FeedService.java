@@ -19,14 +19,16 @@
 
 package net.atos.entng.rss.service;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 
-import fr.wseduc.webutils.Either;
 
 public interface FeedService {
 
-	public void getItems(HttpServerRequest request, String url, String force, Handler<Either<String, JsonObject>> handler);
+	void getItems(HttpServerRequest request, String url, String force,
+						 Handler<AsyncResult<Message<JsonObject>>> handler);
 
 }
