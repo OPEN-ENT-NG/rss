@@ -20,6 +20,7 @@
 package net.atos.entng.rss.parser;
 
 import java.io.IOException;
+import java.io.StringReader;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -27,6 +28,11 @@ import javax.xml.parsers.SAXParserFactory;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 import net.atos.entng.rss.service.FeedServiceImpl;
 
 import io.vertx.core.Handler;
@@ -34,6 +40,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -47,6 +54,7 @@ public class RssParser extends AbstractVerticle implements Handler<Message<JsonO
 	public static final String PARSER_ADDRESS = "rss.parser";
 	public static final String ACTION_CLEANUP = "cleanUp";
 	public static final String ACTION_GET = "get";
+	private HttpClient httpClient;
 
 	@Override
 	public void start() throws Exception {
@@ -54,6 +62,8 @@ public class RssParser extends AbstractVerticle implements Handler<Message<JsonO
 		final long cleanTimeout = config().getLong("clean-timeout", DEFAULT_CLEAN_TIMEOUT) * 60000;
 		vertx.eventBus().localConsumer("rss.parser", this);
 		rssParserCache = new RssParserCache();
+		httpClient = vertx.createHttpClient(new HttpClientOptions()
+						.setKeepAlive(false).setConnectTimeout(5000));
 		vertx.setPeriodic(cleanTimeout, new Handler<Long>() {
 			@Override
 			public void handle(Long cleanTimeout) {
@@ -108,22 +118,40 @@ public class RssParser extends AbstractVerticle implements Handler<Message<JsonO
 					});
 				}
 				else{
-					JsonObject results = new JsonObject();
-					try {
-						SAXParserFactory factory = SAXParserFactory.newInstance();
-						SAXParser parser = factory.newSAXParser();
-						DefaultHandler handler = new RssParserHandler(new Handler<JsonObject>(){
-							@Override
-							public void handle(JsonObject results) {
-								rssParserCache.put(url, results);
-								message.reply(results);
-							}
-						});
-						parser.parse(url, handler);
-					} catch (SAXException | IOException | ParserConfigurationException se) {
-						results.put("status", 204);
-						message.reply(results);
-					}
+					final HttpClientRequest req = httpClient.getAbs(url, response -> {
+						final JsonObject results = new JsonObject();
+						if (response.statusCode() == 200) {
+							response.bodyHandler(buffer -> {
+								final String content = buffer.toString();
+								if (content.isEmpty()) {
+									results.put("status", 204);
+									message.reply(results);
+									return;
+								}
+
+								try {
+									SAXParserFactory factory = SAXParserFactory.newInstance();
+									SAXParser parser = factory.newSAXParser();
+									DefaultHandler handler = new RssParserHandler(new Handler<JsonObject>(){
+										@Override
+										public void handle(JsonObject results1) {
+											rssParserCache.put(url, results1);
+											message.reply(results1);
+										}
+									});
+									parser.parse(new InputSource(new StringReader(content)), handler);
+								} catch (SAXException | IOException | ParserConfigurationException se) {
+									results.put("status", 204);
+									message.reply(results);
+								}
+							});
+						} else {
+							results.put("status", 204);
+							message.reply(results);
+						}
+					});
+					req.setTimeout(15000l);
+					req.end();
 				}
 			}
 		}
