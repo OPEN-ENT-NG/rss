@@ -6,6 +6,7 @@
   		  "app-name" : "Rss",
   		  "app-address" : "/rss",
   		  "app-icon" : "rss-large",
+          "app-type" : "WIDGET",
   		  "host": "${host}",
   		  "ssl" : $ssl,
   		  "auto-redeploy": false,
