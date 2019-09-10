@@ -39,6 +39,8 @@ rssWidget.loadFeeds = function(force){
 					rssWidget.feeds.push(result);
 					model.widgets.apply();
 				}
+			}).error(function(e){
+				console.warn("[widget.rss] failed to loadFeeds: ", e)
 			});
 		}
 	});
@@ -54,7 +56,10 @@ rssWidget.initFeeds = function(){
 			}
 			model.widgets.apply();
 			rssWidget.loadFeeds(0); // 0 : default, from the cache
-		});
+		}).error(function(e){
+			console.warn("[widget.rss] failed to initFeeds: ", e)
+			rssWidget.channel = new Channel();
+		})
 	}
 	else{
 		rssWidget.loadFeeds(0); // 0 : default, from the cache
