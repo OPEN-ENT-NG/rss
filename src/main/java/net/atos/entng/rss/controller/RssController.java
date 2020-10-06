@@ -30,6 +30,9 @@ import net.atos.entng.rss.service.ChannelServiceMongoImpl;
 import net.atos.entng.rss.service.FeedService;
 import net.atos.entng.rss.service.FeedServiceImpl;
 
+import org.entcore.common.events.EventHelper;
+import org.entcore.common.events.EventStore;
+import org.entcore.common.events.EventStoreFactory;
 import org.entcore.common.mongodb.MongoDbControllerHelper;
 import org.entcore.common.user.UserInfos;
 import org.entcore.common.user.UserUtils;
@@ -45,7 +48,9 @@ import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
 
 public class RssController extends MongoDbControllerHelper {
+	static final String RESOURCE_NAME = "rss";
 
+	private final EventHelper eventHelper;
 	private final ChannelService channelService;
 	private final FeedService feedService;
 
@@ -53,6 +58,8 @@ public class RssController extends MongoDbControllerHelper {
 		super(Rss.RSS_COLLECTION);
 		this.channelService = new ChannelServiceMongoImpl(Rss.RSS_COLLECTION);
 		this.feedService = new FeedServiceImpl(eb);
+		final EventStore eventStore = EventStoreFactory.getFactory().getEventStore(Rss.class.getSimpleName());
+		this.eventHelper = new EventHelper(eventStore);
 	}
 
 	@Get("")
@@ -75,7 +82,11 @@ public class RssController extends MongoDbControllerHelper {
 	@Post("/channel")
 	@SecuredAction(value = "channel.create", type = ActionType.AUTHENTICATED)
 	public void createchannel(HttpServerRequest request) {
-		super.create(request);
+		super.create(request, r -> {
+			if(r.succeeded()){
+				eventHelper.onCreateResource(request, RESOURCE_NAME);
+			}
+		});
 	}
 
 	@Get("/channel/:id")
