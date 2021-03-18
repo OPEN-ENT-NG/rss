@@ -55,7 +55,17 @@ public class RssRepositoryEvents implements RepositoryEvents {
 	@Override
 	public void deleteUsers(JsonArray users) {
         //FIXME: anonymization is not relevant
-		if(users == null || users.size() == 0) {
+		if(users == null) {
+			log.warn("[RssRepositoryEvents][deleteUsers] JsonArray users is null or empty");
+			return;
+		}
+		for(int i = users.size(); i-- > 0;)
+		{
+			if(users.hasNull(i))
+				users.remove(i);
+		}
+		if(users.size() == 0)
+		{
 			log.warn("[RssRepositoryEvents][deleteUsers] JsonArray users is null or empty");
 			return;
 		}
