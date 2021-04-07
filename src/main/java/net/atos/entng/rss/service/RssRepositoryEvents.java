@@ -63,6 +63,8 @@ public class RssRepositoryEvents implements RepositoryEvents {
 		{
 			if(users.hasNull(i))
 				users.remove(i);
+			else if (users.getJsonObject(i) != null && users.getJsonObject(i).getString("id") == null)
+				users.remove(i);
 		}
 		if(users.size() == 0)
 		{
