@@ -41,7 +41,8 @@ public class RssRepositoryEvents implements RepositoryEvents {
 	private final MongoDb mongo = MongoDb.getInstance();
 
 	@Override
-	public void exportResources(JsonArray resourcesIds, String exportId, String userId, JsonArray groups, String exportPath, String locale, String host, Handler<Boolean> handler) {
+	public void exportResources(JsonArray resourcesIds, boolean exportDocuments, boolean exportSharedResources, String exportId, String userId,
+								JsonArray groups, String exportPath, String locale, String host, Handler<Boolean> handler) {
 		// TODO Implement exportResources
 		log.warn("[RssRepositoryEvents] exportResources is not implemented");
 	}
