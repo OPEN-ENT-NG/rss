@@ -130,9 +130,14 @@ public class RssParser extends AbstractVerticle implements Handler<Message<JsonO
 								}
 
 								try {
-									SAXParserFactory factory = SAXParserFactory.newInstance();
-									SAXParser parser = factory.newSAXParser();
-									DefaultHandler handler = new RssParserHandler(new Handler<JsonObject>(){
+									final SAXParserFactory factory = SAXParserFactory.newInstance();
+									factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+									final SAXParser parser = factory.newSAXParser();
+									parser.getXMLReader().setFeature("http://xml.org/sax/features/external-general-entities", false);
+									factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+									factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+
+									final DefaultHandler handler = new RssParserHandler(new Handler<JsonObject>(){
 										@Override
 										public void handle(JsonObject results1) {
 											rssParserCache.put(url, results1);
