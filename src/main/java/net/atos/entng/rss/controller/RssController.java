@@ -23,6 +23,8 @@ import static org.entcore.common.http.response.DefaultResponseHandler.arrayRespo
 import static org.entcore.common.http.response.DefaultResponseHandler.defaultResponseHandler;
 import static org.entcore.common.http.response.DefaultResponseHandler.notEmptyResponseHandler;
 
+import fr.wseduc.webutils.request.RequestUtils;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import net.atos.entng.rss.Rss;
 import net.atos.entng.rss.service.ChannelService;
@@ -46,6 +48,8 @@ import fr.wseduc.rs.Post;
 import fr.wseduc.rs.Put;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
+
+import java.util.List;
 
 public class RssController extends MongoDbControllerHelper {
 	static final String RESOURCE_NAME = "rss";
@@ -83,7 +87,7 @@ public class RssController extends MongoDbControllerHelper {
 	@SecuredAction(value = "channel.create", type = ActionType.AUTHENTICATED)
 	public void createchannel(HttpServerRequest request) {
 		super.create(request, r -> {
-			if(r.succeeded()){
+			if (r.succeeded()) {
 				eventHelper.onCreateResource(request, RESOURCE_NAME);
 			}
 		});
@@ -104,18 +108,33 @@ public class RssController extends MongoDbControllerHelper {
 	@Put("/channel/:id")
 	@SecuredAction(value = "", type = ActionType.RESOURCE)
 	public void updatechannel(HttpServerRequest request) {
-		super.update(request);
+		UserUtils.getUserInfos(eb, request, user -> {
+            if (user != null) {
+                final String id = request.params().get("id");
+                RequestUtils.bodyToJson(request, data -> {
+					JsonArray allFeeds = data.getJsonArray("feeds");
+					channelService.update(user.getUserId(), id, allFeeds, defaultResponseHandler(request));
+				});
+            } else {
+                unauthorized(request);
+            }
+        });
 	}
 
 	@Delete("/channel/:id")
 	@SecuredAction(value = "", type = ActionType.RESOURCE)
 	public void deletechannel(HttpServerRequest request) {
-		final String id = request.params().get("id");
-		channelService.deleteChannel(id, defaultResponseHandler(request));
+		UserUtils.getUserInfos(eb, request, (Handler<UserInfos>) user -> {
+            if (user != null) {
+                final String id = request.params().get("id");
+                channelService.deleteChannel(user.getUserId(), id, defaultResponseHandler(request));
+            } else {
+                unauthorized(request);
+            }
+        });
 	}
 
 	/* feeds */
-
 	@Get("/feed/items")
 	@SecuredAction(value = "feed.read", type = ActionType.AUTHENTICATED)
 	public void getfeedItems(final HttpServerRequest request) {

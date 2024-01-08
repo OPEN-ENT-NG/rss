@@ -19,6 +19,7 @@
 
 package net.atos.entng.rss.service;
 
+
 import org.entcore.common.user.UserInfos;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
@@ -27,11 +28,13 @@ import io.vertx.core.json.JsonObject;
 import fr.wseduc.webutils.Either;
 
 public interface ChannelService {
+	public void create(JsonObject channel, Handler<Either<String, JsonObject>> handler);
 
 	public void list(UserInfos user, Handler<Either<String, JsonArray>> arrayResponseHandler);
 
 	public void retrieve(String id, UserInfos user, Handler<Either<String, JsonObject>> notEmptyResponseHandler);
 
-	public void deleteChannel(String idChannel, Handler<Either<String, JsonObject>> handler);
+	public void deleteChannel(String userId, String idChannel, Handler<Either<String, JsonObject>> handler);
 
+	public void update(String userId, String id, JsonArray feeds, Handler<Either<String, JsonObject>> handler);
 }
