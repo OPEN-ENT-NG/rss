@@ -7,6 +7,7 @@ import fr.wseduc.webutils.Either;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import net.atos.entng.rss.constants.Field;
 import org.entcore.common.service.impl.MongoDbCrudService;
 import org.entcore.common.user.UserInfos;
 
@@ -27,27 +28,27 @@ public class ChannelGlobalServiceMongoImpl extends MongoDbCrudService implements
     @Override
     public void createGlobalChannel(UserInfos user, JsonObject channel, Handler<Either<String, JsonObject>> handler) {
         JsonObject now = MongoDb.now();
-        channel.put("global", true);
-        channel.put("modified", now);
-        channel.put("created", now);
+        channel.put(Field.GLOBAL, true);
+        channel.put(Field.MODIFIED, now);
+        channel.put(Field.CREATED, now);
         JsonObject owner = new JsonObject()
-                .put("userId", user.getUserId())
-                .put("displayName", user.getUsername());
-        channel.put("owner", owner);
+                .put(Field.USER_ID, user.getUserId())
+                .put(Field.DISPLAY_NAME, user.getUsername());
+        channel.put(Field.OWNER, owner);
         mongo.insert(collection, channel, validResultHandler(handler));
     }
 
     @Override
-    public void list(UserInfos user, Handler<Either<String, JsonArray>> arrayResponseHandler) {
+    public void list(Handler<Either<String, JsonArray>> arrayResponseHandler) {
         // Start
-        QueryBuilder query = QueryBuilder.start("global").is(true);
+        QueryBuilder query = QueryBuilder.start(Field.GLOBAL).is(true);
         mongo.find(collection, MongoQueryBuilder.build(query), null, null, validResultsHandler(arrayResponseHandler));
     }
 
     @Override
     public void deleteGlobalChannel(String idChannel, Handler<Either<String, JsonObject>> handler) {
         // Delete the channel
-        QueryBuilder builder = QueryBuilder.start("_id").is(idChannel);
+        QueryBuilder builder = QueryBuilder.start(Field.ID).is(idChannel);
         mongo.delete(collection,  MongoQueryBuilder.build(builder), validResultHandler(handler));
     }
 }

@@ -25,8 +25,6 @@ import static org.entcore.common.http.response.DefaultResponseHandler.arrayRespo
 import static org.entcore.common.http.response.DefaultResponseHandler.defaultResponseHandler;
 
 public class RssGlobalController extends MongoDbControllerHelper {
-    static final String RESOURCE_NAME = "rssGlobal";
-
     private final ChannelGlobalService channelGlobalService;
 
     private final EventHelper eventHelper;
@@ -42,19 +40,11 @@ public class RssGlobalController extends MongoDbControllerHelper {
     @ResourceFilter(SuperAdminFilter.class)
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     public void createGlobalChannel(HttpServerRequest request) {
-        UserUtils.getUserInfos(eb, request, new Handler<UserInfos>() {
-            @Override
-            public void handle(final UserInfos user) {
-                if (user != null) {
-                    RequestUtils.bodyToJson(request, new Handler<JsonObject>() {
-                        @Override
-                        public void handle(final JsonObject channel) {
-                            channelGlobalService.createGlobalChannel(user, channel, defaultResponseHandler(request));
-                        }
-                    });
-                } else {
-                    unauthorized(request);
-                }
+        UserUtils.getUserInfos(eb, request, user -> {
+            if (user != null) {
+                RequestUtils.bodyToJson(request, channel -> channelGlobalService.createGlobalChannel(user, channel, defaultResponseHandler(request)));
+            } else {
+                unauthorized(request);
             }
         });
 
@@ -64,10 +54,11 @@ public class RssGlobalController extends MongoDbControllerHelper {
     @ResourceFilter(SuperAdminFilter.class)
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     public void getGlobalChannels(HttpServerRequest request) {
-        UserUtils.getUserInfos(eb, request, new Handler<UserInfos>() {
-            @Override
-            public void handle(final UserInfos user) {
-                channelGlobalService.list(user, arrayResponseHandler(request));
+        UserUtils.getUserInfos(eb, request, user -> {
+            if (user != null) {
+                channelGlobalService.list(arrayResponseHandler(request));
+            } else {
+                unauthorized(request);
             }
         });
     }
@@ -83,15 +74,12 @@ public class RssGlobalController extends MongoDbControllerHelper {
     @ResourceFilter(SuperAdminFilter.class)
     @SecuredAction(value = "", type = ActionType.RESOURCE)
     public void deleteGlobalChannel(HttpServerRequest request) {
-        UserUtils.getUserInfos(eb, request, new Handler<UserInfos>() {
-            @Override
-            public void handle(final UserInfos user) {
-                if (user != null) {
-                    final String id = request.params().get("id");
-                    channelGlobalService.deleteGlobalChannel(id, defaultResponseHandler(request));
-                } else {
-                    unauthorized(request);
-                }
+        UserUtils.getUserInfos(eb, request, user -> {
+            if (user != null) {
+                final String id = request.params().get("id");
+                channelGlobalService.deleteGlobalChannel(id, defaultResponseHandler(request));
+            } else {
+                unauthorized(request);
             }
         });
     }

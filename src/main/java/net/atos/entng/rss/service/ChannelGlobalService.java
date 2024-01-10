@@ -8,6 +8,6 @@ import org.entcore.common.user.UserInfos;
 
 public interface ChannelGlobalService {
     public void createGlobalChannel(UserInfos user, JsonObject channel, Handler<Either<String, JsonObject>> handler);
-    public void list(UserInfos user, Handler<Either<String, JsonArray>> arrayResponseHandler);
+    public void list(Handler<Either<String, JsonArray>> arrayResponseHandler);
     public void deleteGlobalChannel(String idChannel, Handler<Either<String, JsonObject>> handler);
 }

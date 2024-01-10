@@ -20,6 +20,7 @@
 package net.atos.entng.rss.service;
 
 import fr.wseduc.mongodb.MongoUpdateBuilder;
+import net.atos.entng.rss.constants.Field;
 import org.entcore.common.neo4j.Neo4j;
 import org.entcore.common.neo4j.Neo4jResult;
 import org.entcore.common.service.impl.MongoDbCrudService;
@@ -41,12 +42,14 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	private final String collection;
 	private final MongoDb mongo;
 	private final Neo4j neo;
+	private final ChannelGlobalServiceMongoImpl channelGlobalServiceMongo;
 
 	public ChannelServiceMongoImpl(final String collection) {
 		super(collection);
 		this.collection = collection;
 		this.mongo = MongoDb.getInstance();
 		this.neo = Neo4j.getInstance();
+		this.channelGlobalServiceMongo = new ChannelGlobalServiceMongoImpl(collection);
 	}
 
 	@Override
@@ -58,105 +61,190 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	@Override
 	public void list(UserInfos user, Handler<Either<String, JsonArray>> arrayResponseHandler) {
 		// Start
-		QueryBuilder query = QueryBuilder.start("owner.userId").is(user.getUserId());
-		mongo.find(collection, MongoQueryBuilder.build(query), null, null, validResultsHandler(arrayResponseHandler));
+		QueryBuilder query = QueryBuilder.start("owner.userId").is(user.getUserId()).and(Field.GLOBAL).notEquals(true);
+		// get channels
+		mongo.find(collection, MongoQueryBuilder.build(query), null, null, validResultsHandler(result -> {
+			if (result.isLeft()) {
+				arrayResponseHandler.handle(new Either.Left<>(result.left().getValue()));
+				return;
+			}
+			JsonArray channels = result.right().getValue();
+			// get preferences
+			this.getPreferences(user.getUserId(), resultPref -> {
+				if (resultPref.isLeft()) {
+					arrayResponseHandler.handle(new Either.Left<>(resultPref.left().getValue()));
+					return;
+				}
+				JsonArray preferences = resultPref.right().getValue();
+				// get global channels
+				this.channelGlobalServiceMongo.list(globalList -> {
+					if (globalList.isLeft()) {
+						arrayResponseHandler.handle(new Either.Left<>(globalList.left().getValue()));
+						return;
+					}
+					JsonArray globalArray = globalList.right().getValue();
+					// merge channels, preferences and global channels
+					JsonArray mergedArray = this.mergeArray(channels, globalArray, preferences);
+					// merge all feeds in first item for frontend
+					JsonObject firstItem = mergedArray.getJsonObject(0);
+					for (int i = 1; i < mergedArray.size(); i++) {
+						JsonObject channel = mergedArray.getJsonObject(i);
+						firstItem.put(Field.FEEDS, firstItem.getJsonArray(Field.FEEDS).addAll(channel.getJsonArray(Field.FEEDS)));
+					}
+					arrayResponseHandler.handle(new Either.Right<>(new JsonArray().add(firstItem)));
+				});
+			});
+		}));
 	}
 
 	@Override
 	public void retrieve(String idChannel, UserInfos user, Handler<Either<String, JsonObject>> notEmptyResponseHandler){
 		// Query
-		QueryBuilder builder = QueryBuilder.start("_id").is(idChannel);
+		QueryBuilder builder = QueryBuilder.start(Field.ID).is(idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(notEmptyResponseHandler));
 	}
 
 	@Override
 	public void deleteChannel(String userId, String idChannel, Handler<Either<String, JsonObject>> handler) {
 		// Delete the channel
-		QueryBuilder builder = QueryBuilder.start("_id").is(idChannel);
+		QueryBuilder builder = QueryBuilder.start(Field.ID).is(idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(result -> {
 			if (result.isLeft()) {
 				handler.handle(new Either.Left<>(result.left().getValue()));
 				return;
 			}
 			JsonObject channel = result.right().getValue();
-			if (Boolean.TRUE.equals(channel.getBoolean("global", false))) {
-				this.getGlobalRemoved(userId, event -> {
-                    if (event.isLeft()) {
-                        handler.handle(new Either.Left<>(event.left().getValue()));
-                        return;
-                    }
-                    JsonArray array;
-                    if (event.right().getValue() == null) {
-                        array = new JsonArray();
-                    } else {
-                        String str = event.right().getValue().getString("uac.rss");
-                        JsonObject obj = new JsonObject(str);
-                        array = obj.getJsonArray("no-display-rss-id");
-                    }
-                    array.add(idChannel);
-                    String arrayString = array.toString().replace("\"", "\\\"");
-                    String query = String.format("MATCH (u:User {id:\"%s\"}) MERGE (u)-[:PREFERS]->(uac:UserAppConf)"
-                            + " ON CREATE SET uac.rss= \"{\\\"no-display-rss-id\\\": %s}\""
-                            + " ON MATCH SET uac.rss= \"{\\\"no-display-rss-id\\\": %s}\"", userId, arrayString, arrayString);
-                    neo.execute(query, new JsonObject(), Neo4jResult.validUniqueResultHandler(handler));
-                });
-			} else {
+			if (!Boolean.TRUE.equals(channel.getBoolean(Field.GLOBAL, false))) {
 				mongo.delete(collection,  MongoQueryBuilder.build(builder), validResultHandler(handler));
+			} else {
+				handler.handle(new Either.Left<>("Global channel cannot be deleted"));
 			}
 		}));
 	}
 
 	@Override
 	public void update(String userId, String idChannel, JsonArray feeds, Handler<Either<String, JsonObject>> handler) {
-		QueryBuilder builder = QueryBuilder.start("_id").is(idChannel);
+		QueryBuilder builder = QueryBuilder.start(Field.ID).is(idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(result -> {
 			if (result.isLeft()) {
 				handler.handle(new Either.Left<>(result.left().getValue()));
 				return;
 			}
 			JsonObject channel = result.right().getValue();
-			if (Boolean.TRUE.equals(channel.getBoolean("global", false))) {
-				this.getGlobalRemoved(userId, event -> {
-					if (event.isLeft()) {
-						handler.handle(new Either.Left<>(event.left().getValue()));
+			if (!Boolean.TRUE.equals(channel.getBoolean(Field.GLOBAL, false))) {
+				this.channelGlobalServiceMongo.list(globalList -> {
+					if (globalList.isLeft()) {
+						handler.handle(new Either.Left<>(globalList.left().getValue()));
 						return;
 					}
-					JsonArray array;
-					if (event.right().getValue() == null) {
-						array = new JsonArray();
-					} else {
-						String str = event.right().getValue().getString("uac.rss");
-						JsonObject obj = new JsonObject(str);
-						array = obj.getJsonArray("no-display-rss-id");
-					}
-					array.add(idChannel);
-					String arrayString = array.toString().replace("\"", "\\\"");
-					String query = String.format("MATCH (u:User {id:\"%s\"}) MERGE (u)-[:PREFERS]->(uac:UserAppConf)"
-							+ " ON CREATE SET uac.rss= \"{\\\"no-display-rss-id\\\": %s}\""
-							+ " ON MATCH SET uac.rss= \"{\\\"no-display-rss-id\\\": %s}\"", userId, arrayString, arrayString);
-					neo.execute(query, new JsonObject(), Neo4jResult.validUniqueResultHandler(handler));
-					// enregistrer le nouveau dans rss perso
-					QueryBuilder builder2 = QueryBuilder.start("owner.userId").is(userId);
-					MongoUpdateBuilder modifier = new MongoUpdateBuilder();
-					JsonObject now = MongoDb.now();
-					feeds.addAll(channel.getJsonArray("feeds"));
-					modifier.set("feeds", feeds).set("modified", now);
-					mongo.update(collection, MongoQueryBuilder.build(builder2), modifier.build(), validActionResultHandler(handler));
+					JsonArray globalArray = globalList.right().getValue();
+					this.getPreferences(userId, resultPreferences -> {
+						if (resultPreferences.isLeft()) {
+							handler.handle(new Either.Left<>(resultPreferences.left().getValue()));
+							return;
+						}
+						JsonArray globalAndPref = mergeArray(new JsonArray(), globalArray, resultPreferences.right().getValue());
+						// remove global feeds and keep removed global in globalAndPref to add in preferences
+						removeGlobalFeeds(feeds, globalAndPref);
+						if (!globalAndPref.isEmpty()) {
+							addPreferences(userId, globalAndPref, resultAddPreferences -> {
+								if (resultAddPreferences.isLeft()) {
+									handler.handle(new Either.Left<>(resultPreferences.left().getValue()));
+								}
+							});
+						}
+						// update channel
+						MongoUpdateBuilder modifier = new MongoUpdateBuilder();
+						JsonObject now = MongoDb.now();
+						modifier.set(Field.FEEDS, feeds).set(Field.MODIFIED, now);
+						mongo.update(collection, MongoQueryBuilder.build(builder), modifier.build(), validActionResultHandler(handler));
+					});
 				});
 			} else {
-				// update the non global channel
-				MongoUpdateBuilder modifier = new MongoUpdateBuilder();
-				JsonObject now = MongoDb.now();
-				modifier.set("feeds", feeds).set("modified", now);
-				mongo.update(collection, MongoQueryBuilder.build(builder), modifier.build(), validActionResultHandler(handler));
+				handler.handle(new Either.Left<>("Global channel cannot be updated"));
 			}
 		}));
 	}
 
-	private void getGlobalRemoved(String userId, Handler<Either<String, JsonObject>> handler) {
+	private void getPreferences(String userId, Handler<Either<String, JsonArray>> handler) {
 		String query = String.format("MATCH (u:User {id:\"%s\"})-[:PREFERS]->(uac:UserAppConf)"
 		+ " RETURN uac.rss LIMIT 1", userId);
 
-		neo.execute(query, new JsonObject().put("userId", userId), Neo4jResult.validUniqueResultHandler(handler));
+		neo.execute(query, new JsonObject().put(Field.USER_ID, userId), Neo4jResult.validUniqueResultHandler(result -> {
+			if (result.isLeft()) {
+				handler.handle(new Either.Left<>(result.left().getValue()));
+				return;
+			}
+			JsonArray pref;
+			String rss = result.right().getValue().getString(Field.PREFERENCES_RSS);
+			if (rss == null) {
+				pref = new JsonArray();
+			} else {
+				JsonObject obj = new JsonObject(rss);
+				pref = obj.getJsonArray(Field.PREFERENCES_NO_DISPLAY_ID);
+			}
+			handler.handle(new Either.Right<>(pref));
+		}));
+	}
+
+	private void addPreferences(String userId, JsonArray globalArray, Handler<Either<String, JsonArray>> handler) {
+		this.getPreferences(userId, resultPreferences -> {
+			if (resultPreferences.isLeft()) {
+				handler.handle(new Either.Left<>(resultPreferences.left().getValue()));
+				return;
+			}
+			JsonArray ids = resultPreferences.right().getValue();
+			// convert globalArray to idArray
+			for (int i = 0; i < globalArray.size(); i++) {
+				JsonObject global = globalArray.getJsonObject(i);
+				ids.add(global.getString(Field.ID));
+			}
+			String idString = ids.toString().replace("\"", "\\\"");
+			String query = String.format("MATCH (u:User {id:\"%s\"}) MERGE (u)-[:PREFERS]->(uac:UserAppConf)"
+					+ " ON CREATE SET uac.rss= \"{\\\"no-display-rss-id\\\": %s}\""
+					+ " ON MATCH SET uac.rss= \"{\\\"no-display-rss-id\\\": %s}\"", userId, idString, idString);
+			neo.execute(query, new JsonObject(), Neo4jResult.validResultHandler(handler));
+		});
+	}
+
+	private JsonArray mergeArray(JsonArray channels, JsonArray globalArray, JsonArray pref) {
+		JsonArray mergedArray = new JsonArray();
+		for (int i = 0; i < channels.size(); i++) {
+			JsonObject channel = channels.getJsonObject(i);
+			String id = channel.getString(Field.ID);
+			if (!pref.contains(id)) {
+				mergedArray.add(channel);
+			}
+		}
+		for (int i = 0; i < globalArray.size(); i++) {
+			JsonObject channel = globalArray.getJsonObject(i);
+			String id = channel.getString(Field.ID);
+			if (!pref.contains(id)) {
+				mergedArray.add(channel);
+			}
+		}
+		return mergedArray;
+	}
+
+	private void removeGlobalFeeds(JsonArray feeds, JsonArray globalArray) {
+		for (int i = 0; i < globalArray.size(); i++) {
+			JsonObject channel = globalArray.getJsonObject(i);
+			JsonArray globalFeeds = channel.getJsonArray(Field.FEEDS);
+			for (int j = 0; j < globalFeeds.size(); j++) {
+				JsonObject globalFeed = globalFeeds.getJsonObject(j);
+				String link = globalFeed.getString(Field.LINK);
+				String title = globalFeed.getString(Field.TITLE);
+				Integer show = globalFeed.getInteger(Field.SHOW);
+				for (int k = 0; k < feeds.size(); k++) {
+					JsonObject feed = feeds.getJsonObject(k);
+					if (link.equals(feed.getString(Field.LINK)) && title.equals(feed.getString(Field.TITLE)) && show.equals(feed.getInteger(Field.SHOW))) {
+						feeds.remove(k);
+						globalArray.remove(i);
+						removeGlobalFeeds(feeds, globalArray);
+						return;
+					}
+				}
+			}
+		}
 	}
 }

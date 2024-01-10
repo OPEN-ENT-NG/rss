@@ -27,6 +27,8 @@ import fr.wseduc.webutils.request.RequestUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import net.atos.entng.rss.Rss;
+import net.atos.entng.rss.constants.Field;
+import net.atos.entng.rss.security.CustomOwner;
 import net.atos.entng.rss.service.ChannelService;
 import net.atos.entng.rss.service.ChannelServiceMongoImpl;
 import net.atos.entng.rss.service.FeedService;
@@ -35,6 +37,7 @@ import net.atos.entng.rss.service.FeedServiceImpl;
 import org.entcore.common.events.EventHelper;
 import org.entcore.common.events.EventStore;
 import org.entcore.common.events.EventStoreFactory;
+import org.entcore.common.http.filter.ResourceFilter;
 import org.entcore.common.mongodb.MongoDbControllerHelper;
 import org.entcore.common.user.UserInfos;
 import org.entcore.common.user.UserUtils;
@@ -48,8 +51,6 @@ import fr.wseduc.rs.Post;
 import fr.wseduc.rs.Put;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
-
-import java.util.List;
 
 public class RssController extends MongoDbControllerHelper {
 	static final String RESOURCE_NAME = "rss";
@@ -75,12 +76,7 @@ public class RssController extends MongoDbControllerHelper {
 	@Get("/channels")
 	@SecuredAction(value = "channel.list", type = ActionType.AUTHENTICATED)
 	public void getchannels(final HttpServerRequest request) {
-		UserUtils.getUserInfos(eb, request, new Handler<UserInfos>() {
-			@Override
-			public void handle(final UserInfos user) {
-				channelService.list(user, arrayResponseHandler(request));
-			}
-		});
+		UserUtils.getUserInfos(eb, request, user -> channelService.list(user, arrayResponseHandler(request)));
 	}
 
 	@Post("/channel")
@@ -96,23 +92,21 @@ public class RssController extends MongoDbControllerHelper {
 	@Get("/channel/:id")
 	@SecuredAction(value = "channel.read", type = ActionType.RESOURCE)
 	public void getchannel(final HttpServerRequest request) {
-		UserUtils.getUserInfos(eb, request, new Handler<UserInfos>() {
-			@Override
-			public void handle(final UserInfos user) {
-				String id = request.params().get("id");
-				channelService.retrieve(id, user, notEmptyResponseHandler(request));
-			}
-		});
+		UserUtils.getUserInfos(eb, request, user -> {
+            String id = request.params().get("id");
+            channelService.retrieve(id, user, notEmptyResponseHandler(request));
+        });
 	}
 
 	@Put("/channel/:id")
+	@ResourceFilter(CustomOwner.class)
 	@SecuredAction(value = "", type = ActionType.RESOURCE)
 	public void updatechannel(HttpServerRequest request) {
 		UserUtils.getUserInfos(eb, request, user -> {
             if (user != null) {
                 final String id = request.params().get("id");
                 RequestUtils.bodyToJson(request, data -> {
-					JsonArray allFeeds = data.getJsonArray("feeds");
+					JsonArray allFeeds = data.getJsonArray(Field.FEEDS);
 					channelService.update(user.getUserId(), id, allFeeds, defaultResponseHandler(request));
 				});
             } else {
@@ -154,5 +148,4 @@ public class RssController extends MongoDbControllerHelper {
 			badRequest(request, "invalid.url");
 		}
 	}
-
 }
