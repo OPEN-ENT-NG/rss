@@ -42,6 +42,7 @@ public class Rss extends BaseServer {
 
 		addController(new RssController(vertx.eventBus()));
 		addController(new RssGlobalController());
+		setDefaultResourceFilter(new ShareAndOwner());
 		MongoDbConf.getInstance().setCollection(RSS_COLLECTION);
 		vertx.deployVerticle(RssParser.class.getName(), new DeploymentOptions()
 				.setWorker(true).setConfig(config));

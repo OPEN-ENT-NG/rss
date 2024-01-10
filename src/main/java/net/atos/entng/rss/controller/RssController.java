@@ -99,7 +99,6 @@ public class RssController extends MongoDbControllerHelper {
 	}
 
 	@Put("/channel/:id")
-	@ResourceFilter(CustomOwner.class)
 	@SecuredAction(value = "", type = ActionType.RESOURCE)
 	public void updatechannel(HttpServerRequest request) {
 		UserUtils.getUserInfos(eb, request, user -> {

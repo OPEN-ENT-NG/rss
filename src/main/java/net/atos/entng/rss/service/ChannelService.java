@@ -28,7 +28,7 @@ import io.vertx.core.json.JsonObject;
 import fr.wseduc.webutils.Either;
 
 public interface ChannelService {
-	public void create(JsonObject channel, Handler<Either<String, JsonObject>> handler);
+	public void create(UserInfos user, JsonObject channel, Handler<Either<String, JsonObject>> handler);
 
 	public void list(UserInfos user, Handler<Either<String, JsonArray>> arrayResponseHandler);
 
