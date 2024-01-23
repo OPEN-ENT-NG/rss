@@ -20,21 +20,51 @@
 package net.atos.entng.rss.service;
 
 
+import io.vertx.core.Future;
+import net.atos.entng.rss.model.Channel;
+import net.atos.entng.rss.model.ChannelFeed;
 import org.entcore.common.user.UserInfos;
-import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-import fr.wseduc.webutils.Either;
+import java.util.List;
+import java.util.Optional;
 
 public interface ChannelService {
-	public void create(UserInfos user, JsonObject channel, Handler<Either<String, JsonObject>> handler);
+	/**
+	 * create channel
+	 *  @param user         User session token
+	 *  @param feeds        Feeds for the channel
+	 */
+	public Future<JsonObject> create(UserInfos user, JsonObject feeds);
 
-	public void list(UserInfos user, Handler<Either<String, JsonArray>> arrayResponseHandler);
+	/**
+	 * list all channels
+	 * @param user			User session token
+	 * @return 				List all channels (user channel + globals channels)
+	 */
+	public Future<Channel> list(UserInfos user);
 
-	public void retrieve(String id, UserInfos user, Handler<Either<String, JsonObject>> notEmptyResponseHandler);
+	/**
+	 * retrieve one channel
+	 * @param id			Channel id
+	 * @param user			User session token
+	 * @return 				The channel asked
+	 */
+	public Future<JsonObject> retrieve(String id, UserInfos user);
 
-	public void deleteChannel(String userId, String idChannel, Handler<Either<String, JsonObject>> handler);
+	/**
+	 * delete a channel
+	 * @param userId		User session token
+	 * @param idChannel		Channel id
+	 */
+	public Future<JsonObject> deleteChannel(String userId, String idChannel);
 
-	public void update(String userId, String id, JsonArray feeds, Handler<Either<String, JsonObject>> handler);
+	/**
+	 * update a channel
+	 * @param userId		User session token
+	 * @param id			Channel id
+	 * @param feeds			Feeds for the channel
+	 */
+	public Future<JsonObject> update(String userId, String id, List<ChannelFeed> feeds);
 }

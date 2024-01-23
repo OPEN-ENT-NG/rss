@@ -20,11 +20,20 @@
 package net.atos.entng.rss.service;
 
 import fr.wseduc.mongodb.MongoUpdateBuilder;
+import fr.wseduc.webutils.request.RequestUtils;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.json.Json;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import net.atos.entng.rss.constants.Field;
+import net.atos.entng.rss.helpers.IModelHelper;
 import net.atos.entng.rss.helpers.PreferenceHelper;
-import net.atos.entng.rss.helpers.UtilsHelper;
-import org.entcore.common.neo4j.Neo4j;
-import org.entcore.common.neo4j.Neo4jResult;
+import net.atos.entng.rss.helpers.PromiseHelper;
+import net.atos.entng.rss.helpers.ChannelsHelper;
+import net.atos.entng.rss.model.Channel;
+import net.atos.entng.rss.model.ChannelFeed;
+import net.atos.entng.rss.model.IModel;
 import org.entcore.common.service.impl.MongoDbCrudService;
 import org.entcore.common.user.UserInfos;
 import io.vertx.core.Handler;
@@ -37,6 +46,11 @@ import fr.wseduc.mongodb.MongoDb;
 import fr.wseduc.mongodb.MongoQueryBuilder;
 import fr.wseduc.webutils.Either;
 
+import java.nio.channels.Channels;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import static org.entcore.common.mongodb.MongoDbResult.*;
 
 public class ChannelServiceMongoImpl extends MongoDbCrudService implements ChannelService {
@@ -44,6 +58,7 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	private final String collection;
 	private final MongoDb mongo;
 	private final ChannelGlobalServiceMongoImpl channelGlobalServiceMongo;
+	private static final Logger log = LoggerFactory.getLogger(ChannelServiceMongoImpl.class);
 
 	public ChannelServiceMongoImpl(final String collection) {
 		super(collection);
@@ -53,137 +68,133 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	}
 
 	@Override
-	public void create(UserInfos user, JsonObject channel, Handler<Either<String, JsonObject>> handler) {
+	public Future<JsonObject> create(UserInfos user, JsonObject feeds) {
 		// Create channel
+		Promise<JsonObject> promise = Promise.promise();
 		JsonObject now = MongoDb.now();
-		channel.put(Field.MODIFIED, now);
-		channel.put(Field.CREATED, now);
+		feeds.put(Field.MODIFIED, now);
+		feeds.put(Field.CREATED, now);
 		JsonObject owner = new JsonObject()
 				.put(Field.USER_ID, user.getUserId())
 				.put(Field.DISPLAY_NAME, user.getUsername());
-		channel.put(Field.OWNER, owner);
-		mongo.insert(collection, channel, validActionResultHandler(handler));
+		feeds.put(Field.OWNER, owner);
+		mongo.insert(collection, feeds, validActionResultHandler(PromiseHelper.handler(promise)));
+		return promise.future();
 	}
 
 	@Override
-	public void list(UserInfos user, Handler<Either<String, JsonArray>> arrayResponseHandler) {
+	public Future<Channel> list(UserInfos user) {
+		Promise<Channel> promise = Promise.promise();
 		QueryBuilder query = QueryBuilder.start("owner.userId").is(user.getUserId()).and(Field.GLOBAL).notEquals(true);
 		// get channels
 		mongo.find(collection, MongoQueryBuilder.build(query), null, null, validResultsHandler(result -> {
 			if (result.isLeft()) {
-				arrayResponseHandler.handle(new Either.Left<>(result.left().getValue()));
+				log.error("[RSS@ChannelServiceMongo::list] Can't find user's channel");
+				promise.fail(result.left().getValue());
 				return;
 			}
-			JsonArray channels = result.right().getValue();
+			List<Channel> channels = IModelHelper.toList(result.right().getValue(), Channel.class);
 			// if user don't have a channel, create
 			if (channels.isEmpty()) {
 				// create your channel
-				this.create(user, new JsonObject().put(Field.FEEDS, new JsonArray()), createResult -> {
-					if (createResult.isLeft()) {
-						arrayResponseHandler.handle(new Either.Left<>(createResult.left().getValue()));
-					}
-				});
-				// retry list with new channel created
-				this.list(user, arrayResponseHandler);
+				this.create(user, new JsonObject().put(Field.FEEDS, new JsonArray()))
+					.onSuccess(resultCreated -> this.list(user)) // retry list with new channel created
+					.onFailure(error -> {
+						log.error("[RSS@ChannelServiceMongo::list] Can't create user's channel");
+						promise.fail(error);
+					});
 				return;
 			}
 			// get preferences
-			PreferenceHelper.getPreferences(user.getUserId(), resultPref -> {
-				if (resultPref.isLeft()) {
-					arrayResponseHandler.handle(new Either.Left<>(resultPref.left().getValue()));
-					return;
-				}
-				JsonArray preferences = resultPref.right().getValue();
-				// get global channels
-				this.channelGlobalServiceMongo.list(globalList -> {
-					if (globalList.isLeft()) {
-						arrayResponseHandler.handle(new Either.Left<>(globalList.left().getValue()));
-						return;
-					}
-					JsonArray globalArray = globalList.right().getValue();
-					// merge channels, preferences and global channels
-					JsonArray mergedArray = UtilsHelper.mergeArray(channels, globalArray, preferences);
-					// merge all feeds in the user channel
-					JsonObject firstItem = mergedArray.getJsonObject(0);
-					for (int i = 1; i < mergedArray.size(); i++) {
-						JsonObject channel = mergedArray.getJsonObject(i);
-						firstItem.put(Field.FEEDS, firstItem.getJsonArray(Field.FEEDS).addAll(channel.getJsonArray(Field.FEEDS)));
-					}
-					arrayResponseHandler.handle(new Either.Right<>(new JsonArray().add(firstItem)));
+			this.channelGlobalServiceMongo.list()
+				.compose(globalChannels -> ChannelsHelper.filterPreferences(user.getUserId(), channels, globalChannels))
+				.compose(ChannelsHelper::mergeToOneChannel)
+				.onSuccess(userChannel -> userChannel.ifPresent(promise::complete))
+				.onFailure(error -> {
+					log.error("[RSS@ChannelServiceMongo::list] Can't get globals channels");
+					promise.fail(error);
 				});
-			});
 		}));
+		return promise.future();
 	}
 
 	@Override
-	public void retrieve(String idChannel, UserInfos user, Handler<Either<String, JsonObject>> notEmptyResponseHandler){
+	public Future<JsonObject> retrieve(String idChannel, UserInfos user){
 		// Query
-		QueryBuilder builder = QueryBuilder.start(Field.ID).is(idChannel);
-		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(notEmptyResponseHandler));
+		Promise<JsonObject> promise = Promise.promise();
+		QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
+		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(PromiseHelper.handler(promise)));
+		return promise.future();
 	}
 
 	@Override
-	public void deleteChannel(String userId, String idChannel, Handler<Either<String, JsonObject>> handler) {
+	public Future<JsonObject> deleteChannel(String userId, String idChannel) {
 		// Delete the channel
-		QueryBuilder builder = QueryBuilder.start(Field.ID).is(idChannel);
+		Promise<JsonObject> promise = Promise.promise();
+		QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(result -> {
 			if (result.isLeft()) {
-				handler.handle(new Either.Left<>(result.left().getValue()));
+				log.error("[RSS@ChannelServiceMongo::delete] Can't delete user's channel");
+				promise.fail(result.left().getValue());
 				return;
 			}
 			JsonObject channel = result.right().getValue();
 			// can't delete the global channel in this endpoint
 			if (!Boolean.TRUE.equals(channel.getBoolean(Field.GLOBAL, false))) {
-				mongo.delete(collection,  MongoQueryBuilder.build(builder), validResultHandler(handler));
+				mongo.delete(collection,  MongoQueryBuilder.build(builder), validResultHandler(PromiseHelper.handler(promise)));
 			} else {
-				handler.handle(new Either.Left<>("Global channel cannot be deleted"));
+				log.error("[RSS@ChannelServiceMongo::delete] Can't delete global channel, use /channels/globals");
+				promise.fail("Global channel cannot be deleted");
 			}
 		}));
+		return promise.future();
 	}
 
 	@Override
-	public void update(String userId, String idChannel, JsonArray feeds, Handler<Either<String, JsonObject>> handler) {
-		QueryBuilder builder = QueryBuilder.start(Field.ID).is(idChannel);
+	public Future<JsonObject> update(String userId, String idChannel, List<ChannelFeed> feeds) {
+		Promise<JsonObject> promise = Promise.promise();
+		QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(result -> {
 			if (result.isLeft()) {
-				handler.handle(new Either.Left<>(result.left().getValue()));
+				log.error("[RSS@ChannelServiceMongo::update] Can't find user's channel");
+				promise.fail(result.left().getValue());
 				return;
 			}
 			JsonObject channel = result.right().getValue();
 			if (!Boolean.TRUE.equals(channel.getBoolean(Field.GLOBAL, false))) {
 				// get globals channels
-				this.channelGlobalServiceMongo.list(globalList -> {
-					if (globalList.isLeft()) {
-						handler.handle(new Either.Left<>(globalList.left().getValue()));
-						return;
-					}
-					JsonArray globalArray = globalList.right().getValue();
-					// get preferences
-					PreferenceHelper.getPreferences(userId, resultPreferences -> {
-						if (resultPreferences.isLeft()) {
-							handler.handle(new Either.Left<>(resultPreferences.left().getValue()));
-							return;
-						}
-						JsonArray globalAndPref = UtilsHelper.mergeArray(new JsonArray(), globalArray, resultPreferences.right().getValue());
-						// remove global feeds and keep removed global in globalAndPref to add in preferences
-						UtilsHelper.removeGlobalFeeds(feeds, globalAndPref);
-						if (!globalAndPref.isEmpty()) {
-							PreferenceHelper.addPreferences(userId, globalAndPref, resultAddPreferences -> {
-								if (resultAddPreferences.isLeft()) {
-									handler.handle(new Either.Left<>(resultPreferences.left().getValue()));
-								}
-							});
+				this.channelGlobalServiceMongo.list()
+					.compose(globalChannels -> ChannelsHelper.filterPreferences(userId, globalChannels, new ArrayList<>()))
+					.onSuccess(userChannels -> {
+						List<ChannelFeed> globalFeeds = ChannelsHelper.removeGlobalFeeds(feeds, userChannels);
+						List<Channel> globalChannelsList = ChannelsHelper.removeGlobalChannels(feeds, userChannels);
+						// remove global feeds
+						feeds.removeAll(globalFeeds);
+						// remove global channels
+						userChannels.removeAll(globalChannelsList);
+						if (!userChannels.isEmpty()) {
+							// add preferences to hidden global channels
+							PreferenceHelper.addPreferences(userId, userChannels)
+								.onFailure(error -> {
+									log.error("[RSS@ChannelServiceMongo::update] Can't add preferences");
+									promise.fail(error);
+								});
 						}
 						// update channel
 						MongoUpdateBuilder modifier = new MongoUpdateBuilder();
 						JsonObject now = MongoDb.now();
-						modifier.set(Field.FEEDS, feeds).set(Field.MODIFIED, now);
-						mongo.update(collection, MongoQueryBuilder.build(builder), modifier.build(), validActionResultHandler(handler));
+						modifier.set(Field.FEEDS, IModelHelper.toJsonArray(feeds)).set(Field.MODIFIED, now);
+						mongo.update(collection, MongoQueryBuilder.build(builder), modifier.build(), validActionResultHandler(PromiseHelper.handler(promise)));
+					})
+					.onFailure(error -> {
+						log.error("[RSS@ChannelServiceMongo::update] Can't get channels");
+						promise.fail(error);
 					});
-				});
 			} else {
-				handler.handle(new Either.Left<>("Global channel cannot be updated"));
+				log.error("[RSS@ChannelServiceMongo::update] Can't update global channel, use /channels/globals");
+				promise.fail("Global channel cannot be updated here");
 			}
 		}));
+		return promise.future();
 	}
 }

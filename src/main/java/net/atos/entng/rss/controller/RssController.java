@@ -19,16 +19,13 @@
 
 package net.atos.entng.rss.controller;
 
-import static org.entcore.common.http.response.DefaultResponseHandler.arrayResponseHandler;
-import static org.entcore.common.http.response.DefaultResponseHandler.defaultResponseHandler;
-import static org.entcore.common.http.response.DefaultResponseHandler.notEmptyResponseHandler;
-
 import fr.wseduc.webutils.request.RequestUtils;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import net.atos.entng.rss.Rss;
 import net.atos.entng.rss.constants.Field;
-import net.atos.entng.rss.security.CustomOwner;
+import net.atos.entng.rss.helpers.IModelHelper;
+import net.atos.entng.rss.model.Channel;
+import net.atos.entng.rss.model.ChannelFeed;
 import net.atos.entng.rss.service.ChannelService;
 import net.atos.entng.rss.service.ChannelServiceMongoImpl;
 import net.atos.entng.rss.service.FeedService;
@@ -38,10 +35,9 @@ import org.entcore.common.events.EventHelper;
 import org.entcore.common.events.EventStore;
 import org.entcore.common.events.EventStoreFactory;
 import org.entcore.common.http.filter.ResourceFilter;
+import org.entcore.common.http.filter.ShareAndOwner;
 import org.entcore.common.mongodb.MongoDbControllerHelper;
-import org.entcore.common.user.UserInfos;
 import org.entcore.common.user.UserUtils;
-import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServerRequest;
 
@@ -51,6 +47,10 @@ import fr.wseduc.rs.Post;
 import fr.wseduc.rs.Put;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 public class RssController extends MongoDbControllerHelper {
 	static final String RESOURCE_NAME = "rss";
@@ -68,19 +68,27 @@ public class RssController extends MongoDbControllerHelper {
 	}
 
 	@Get("")
-	@SecuredAction(value = "rss.view", type = ActionType.AUTHENTICATED)
+	@SecuredAction(value = "", type = ActionType.AUTHENTICATED)
 	public void view(HttpServerRequest request) {
 		renderView(request);
 	}
 
 	@Get("/channels")
-	@SecuredAction(value = "channel.list", type = ActionType.AUTHENTICATED)
+	@SecuredAction(value = "", type = ActionType.AUTHENTICATED)
 	public void getchannels(final HttpServerRequest request) {
-		UserUtils.getUserInfos(eb, request, user -> channelService.list(user, arrayResponseHandler(request)));
+		UserUtils.getAuthenticatedUserInfos(eb, request)
+			.compose(channelService::list)
+			.onSuccess(result -> renderJson(request, IModelHelper.toJsonArray(Collections.singletonList(result))))
+			.onFailure(error -> {
+				String message = String.format("[RSS@%s::GetChannels] Failed to get channels : %s",
+						this.getClass().getSimpleName(), error.getMessage());
+				log.error(message);
+				renderError(request);
+			});
 	}
 
 	@Post("/channel")
-	@SecuredAction(value = "channel.create", type = ActionType.AUTHENTICATED)
+	@SecuredAction(value = "", type = ActionType.AUTHENTICATED)
 	public void createchannel(HttpServerRequest request) {
 		super.create(request, r -> {
 			if (r.succeeded()) {
@@ -90,46 +98,53 @@ public class RssController extends MongoDbControllerHelper {
 	}
 
 	@Get("/channel/:id")
-	@SecuredAction(value = "channel.read", type = ActionType.RESOURCE)
+	@ResourceFilter(ShareAndOwner.class)
+	@SecuredAction(value = "", type = ActionType.RESOURCE)
 	public void getchannel(final HttpServerRequest request) {
-		UserUtils.getUserInfos(eb, request, user -> {
-            String id = request.params().get("id");
-            channelService.retrieve(id, user, notEmptyResponseHandler(request));
-        });
+		UserUtils.getAuthenticatedUserInfos(eb, request)
+			.compose(userInfos -> channelService.retrieve(request.params().get(Field.ID), userInfos))
+			.onSuccess(result -> renderJson(request, result))
+			.onFailure(error -> {
+				String message = String.format("[RSS@%s::GetChannel] Failed to get channel %s : %s",
+						this.getClass().getSimpleName(), request.params().get(Field.ID), error.getMessage());
+				log.error(message);
+				renderError(request);
+			});
 	}
 
 	@Put("/channel/:id")
+	@ResourceFilter(ShareAndOwner.class)
 	@SecuredAction(value = "", type = ActionType.RESOURCE)
 	public void updatechannel(HttpServerRequest request) {
-		UserUtils.getUserInfos(eb, request, user -> {
-            if (user != null) {
-                final String id = request.params().get("id");
-                RequestUtils.bodyToJson(request, data -> {
-					JsonArray allFeeds = data.getJsonArray(Field.FEEDS);
-					channelService.update(user.getUserId(), id, allFeeds, defaultResponseHandler(request));
-				});
-            } else {
-                unauthorized(request);
-            }
-        });
+		RequestUtils.bodyToJson(request, feeds -> UserUtils.getAuthenticatedUserInfos(eb, request)
+			.compose(userInfos -> channelService.update(userInfos.getUserId(), request.params().get(Field.ID), IModelHelper.toList(feeds.getJsonArray(Field.FEEDS), ChannelFeed.class)))
+			.onSuccess(result -> renderJson(request, result))
+			.onFailure(error -> {
+				String message = String.format("[RSS@%s::PutChannel] Failed to update channel %s : %s",
+						this.getClass().getSimpleName(), request.params().get(Field.ID), error.getMessage());
+				log.error(message);
+				renderError(request);
+			}));
 	}
 
 	@Delete("/channel/:id")
+	@ResourceFilter(ShareAndOwner.class)
 	@SecuredAction(value = "", type = ActionType.RESOURCE)
 	public void deletechannel(HttpServerRequest request) {
-		UserUtils.getUserInfos(eb, request, (Handler<UserInfos>) user -> {
-            if (user != null) {
-                final String id = request.params().get("id");
-                channelService.deleteChannel(user.getUserId(), id, defaultResponseHandler(request));
-            } else {
-                unauthorized(request);
-            }
-        });
+		UserUtils.getAuthenticatedUserInfos(eb, request)
+			.compose(userInfos -> channelService.deleteChannel(userInfos.getUserId(), request.params().get(Field.ID)))
+			.onSuccess(result -> renderJson(request, result))
+			.onFailure(error -> {
+				String message = String.format("[RSS@%s::GetChannel] Failed to get channel %s : %s",
+						this.getClass().getSimpleName(), request.params().get(Field.ID), error.getMessage());
+				log.error(message);
+				renderError(request);
+			});
 	}
 
 	/* feeds */
 	@Get("/feed/items")
-	@SecuredAction(value = "feed.read", type = ActionType.AUTHENTICATED)
+	@SecuredAction(value = "", type = ActionType.AUTHENTICATED)
 	public void getfeedItems(final HttpServerRequest request) {
 		final String url = request.params().get("url");
 		final String force = request.params().get("force");
