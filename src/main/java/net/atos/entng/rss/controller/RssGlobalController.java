@@ -11,7 +11,6 @@ import io.vertx.core.http.HttpServerRequest;
 import net.atos.entng.rss.Rss;
 import net.atos.entng.rss.constants.Field;
 import net.atos.entng.rss.helpers.IModelHelper;
-import net.atos.entng.rss.helpers.PromiseHelper;
 import net.atos.entng.rss.service.*;
 import org.entcore.common.events.EventHelper;
 import org.entcore.common.events.EventStore;
@@ -38,7 +37,7 @@ public class RssGlobalController extends MongoDbControllerHelper {
     public void createGlobalChannel(HttpServerRequest request) {
         RequestUtils.bodyToJson(request, feeds -> UserUtils.getAuthenticatedUserInfos(eb, request)
             .compose(userInfos -> channelGlobalService.createGlobalChannel(userInfos, feeds))
-            .onSuccess(result -> renderJson(request, result))
+            .onSuccess(result -> ok(request))
             .onFailure(error -> {
                 String message = String.format("[RSS@%s::CreateGlobalsChannels] Failed to create global channel : %s",
                         this.getClass().getSimpleName(), error.getMessage());
@@ -75,7 +74,7 @@ public class RssGlobalController extends MongoDbControllerHelper {
     public void deleteGlobalChannel(HttpServerRequest request) {
         UserUtils.getAuthenticatedUserInfos(eb, request)
             .compose(userInfos -> channelGlobalService.deleteGlobalChannel(request.params().get(Field.ID)))
-            .onSuccess(result -> renderJson(request, result))
+            .onSuccess(result -> ok(request))
             .onFailure(error -> {
                 String message = String.format("[RSS@%s::DeleteGlobalChannel] Failed to delete global channel : %s",
                         this.getClass().getSimpleName(), error.getMessage());

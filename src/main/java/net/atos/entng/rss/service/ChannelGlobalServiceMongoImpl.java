@@ -5,11 +5,9 @@ import fr.wseduc.mongodb.MongoDb;
 import fr.wseduc.mongodb.MongoQueryBuilder;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import net.atos.entng.rss.constants.Field;
 import net.atos.entng.rss.helpers.IModelHelper;
-import net.atos.entng.rss.helpers.PromiseHelper;
 import net.atos.entng.rss.model.Channel;
 import org.entcore.common.mongodb.MongoDbResult;
 import org.entcore.common.service.impl.MongoDbCrudService;
@@ -30,17 +28,17 @@ public class ChannelGlobalServiceMongoImpl extends MongoDbCrudService implements
     }
 
     @Override
-    public Future<JsonObject> createGlobalChannel(UserInfos user, JsonObject feeds) {
-        Promise<JsonObject> promise = Promise.promise();
+    public Future<Channel> createGlobalChannel(UserInfos user, JsonObject feed) {
+        Promise<Channel> promise = Promise.promise();
         JsonObject now = MongoDb.now();
-        feeds.put(Field.GLOBAL, true);
-        feeds.put(Field.MODIFIED, now);
-        feeds.put(Field.CREATED, now);
+        feed.put(Field.GLOBAL, true);
+        feed.put(Field.MODIFIED, now);
+        feed.put(Field.CREATED, now);
         JsonObject owner = new JsonObject()
                 .put(Field.USER_ID, user.getUserId())
                 .put(Field.DISPLAY_NAME, user.getUsername());
-        feeds.put(Field.OWNER, owner);
-        mongo.insert(collection, feeds, MongoDbResult.validResultHandler(PromiseHelper.handler(promise)));
+        feed.put(Field.OWNER, owner);
+        mongo.insert(collection, feed, MongoDbResult.validResultHandler(IModelHelper.uniqueResultToIModel(promise, Channel.class)));
         return promise.future();
     }
 
@@ -53,19 +51,17 @@ public class ChannelGlobalServiceMongoImpl extends MongoDbCrudService implements
                 promise.fail(results.left().getValue());
                 return;
             }
-            List<Channel> globalsChannels = IModelHelper.toList(results.right().getValue(), Channel.class)
-                    .stream()
-                    .collect(ArrayList::new, List::add, List::addAll);
+            List<Channel> globalsChannels = new ArrayList<>(IModelHelper.toList(results.right().getValue(), Channel.class));
             promise.complete(globalsChannels);
         }));
         return promise.future();
     }
 
     @Override
-    public Future<JsonObject> deleteGlobalChannel(String idChannel) {
-        Promise<JsonObject> promise = Promise.promise();
+    public Future<Channel> deleteGlobalChannel(String idChannel) {
+        Promise<Channel> promise = Promise.promise();
         QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
-        mongo.delete(collection,  MongoQueryBuilder.build(builder), MongoDbResult.validResultHandler(PromiseHelper.handler(promise)));
+        mongo.delete(collection,  MongoQueryBuilder.build(builder), MongoDbResult.validResultHandler(IModelHelper.uniqueResultToIModel(promise, Channel.class)));
         return promise.future();
     }
 }

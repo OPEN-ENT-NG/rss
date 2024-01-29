@@ -5,7 +5,6 @@ import io.vertx.core.json.JsonObject;
 import net.atos.entng.rss.constants.Field;
 import net.atos.entng.rss.helpers.IModelHelper;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Channel implements IModel<Channel> {
@@ -15,8 +14,6 @@ public class Channel implements IModel<Channel> {
     private List<ChannelFeed> feeds;
     private JsonObject owner;
     private boolean global;
-    public Channel () {
-    }
     public Channel(JsonObject channel) {
         this._id = channel.getString(Field.MONGO_ID, null);
         this.created = channel.getJsonObject(Field.CREATED, null);
@@ -28,50 +25,50 @@ public class Channel implements IModel<Channel> {
     public String getId() {
         return _id;
     }
-    public void setId(String id) {
+    public Channel setId(String id) {
         this._id = id;
+        return this;
     }
     public List<ChannelFeed> getFeeds() {
         return feeds;
     }
-    public void setFeeds(List<ChannelFeed> feeds) {
+    public Channel setFeeds(List<ChannelFeed> feeds) {
         this.feeds = feeds;
+        return this;
     }
     public JsonObject getCreated() {
         return created;
     }
-    public void setCreated(JsonObject created) {
+    public Channel setCreated(JsonObject created) {
         this.created = created;
+        return this;
     }
     public JsonObject getModified() {
         return modified;
     }
-    public void setModifiedDate(JsonObject modified) {
+    public Channel setModifiedDate(JsonObject modified) {
         this.modified = modified;
+        return this;
     }
     public boolean getGlobal() {
         return global;
     }
-    public void setGlobal(boolean global) {
+    public Channel setGlobal(boolean global) {
         this.global = global;
+        return this;
     }
     public JsonObject getOwner() {
         return owner;
     }
-    public void setOwner(JsonObject owner) {
+    public Channel setOwner(JsonObject owner) {
         this.owner = owner;
+        return this;
     }
     public void addFeeds(List<ChannelFeed> feeds) {
         this.feeds.addAll(feeds);
     }
     @Override
     public JsonObject toJson() {
-        return new JsonObject()
-            .put(Field.CREATED, this.created)
-            .put(Field.MODIFIED, this.modified)
-            .put(Field.MONGO_ID, this._id)
-            .put(Field.OWNER, this.owner)
-            .put(Field.GLOBAL, this.global)
-            .put(Field.FEEDS, this.feeds);
+        return IModelHelper.toJson(this, false, false);
     }
 }

@@ -20,36 +20,25 @@
 package net.atos.entng.rss.service;
 
 import fr.wseduc.mongodb.MongoUpdateBuilder;
-import fr.wseduc.webutils.request.RequestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.json.Json;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import net.atos.entng.rss.constants.Field;
 import net.atos.entng.rss.helpers.IModelHelper;
 import net.atos.entng.rss.helpers.PreferenceHelper;
-import net.atos.entng.rss.helpers.PromiseHelper;
 import net.atos.entng.rss.helpers.ChannelsHelper;
 import net.atos.entng.rss.model.Channel;
 import net.atos.entng.rss.model.ChannelFeed;
-import net.atos.entng.rss.model.IModel;
 import org.entcore.common.service.impl.MongoDbCrudService;
 import org.entcore.common.user.UserInfos;
-import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-
 import com.mongodb.QueryBuilder;
-
 import fr.wseduc.mongodb.MongoDb;
 import fr.wseduc.mongodb.MongoQueryBuilder;
-import fr.wseduc.webutils.Either;
-
-import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.entcore.common.mongodb.MongoDbResult.*;
 
@@ -68,28 +57,28 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	}
 
 	@Override
-	public Future<JsonObject> create(UserInfos user, JsonObject feeds) {
+	public Future<Channel> create(UserInfos user, JsonObject feed) {
 		// Create channel
-		Promise<JsonObject> promise = Promise.promise();
+		Promise<Channel> promise = Promise.promise();
 		JsonObject now = MongoDb.now();
-		feeds.put(Field.MODIFIED, now);
-		feeds.put(Field.CREATED, now);
+		feed.put(Field.MODIFIED, now);
+		feed.put(Field.CREATED, now);
 		JsonObject owner = new JsonObject()
 				.put(Field.USER_ID, user.getUserId())
 				.put(Field.DISPLAY_NAME, user.getUsername());
-		feeds.put(Field.OWNER, owner);
-		mongo.insert(collection, feeds, validActionResultHandler(PromiseHelper.handler(promise)));
+		feed.put(Field.OWNER, owner);
+		mongo.insert(collection, feed, validActionResultHandler(IModelHelper.uniqueResultToIModel(promise, Channel.class)));
 		return promise.future();
 	}
 
 	@Override
-	public Future<Channel> list(UserInfos user) {
-		Promise<Channel> promise = Promise.promise();
+	public Future<List<Channel>> list(UserInfos user) {
+		Promise<List<Channel>> promise = Promise.promise();
 		QueryBuilder query = QueryBuilder.start("owner.userId").is(user.getUserId()).and(Field.GLOBAL).notEquals(true);
 		// get channels
 		mongo.find(collection, MongoQueryBuilder.build(query), null, null, validResultsHandler(result -> {
 			if (result.isLeft()) {
-				log.error("[RSS@ChannelServiceMongo::list] Can't find user's channel");
+				log.error("[RSS@ChannelServiceMongoImpl::list] Can't find user's channel");
 				promise.fail(result.left().getValue());
 				return;
 			}
@@ -98,52 +87,45 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 			if (channels.isEmpty()) {
 				// create your channel
 				this.create(user, new JsonObject().put(Field.FEEDS, new JsonArray()))
-					.onSuccess(resultCreated -> this.list(user)) // retry list with new channel created
+					.compose(resultCreated -> this.list(user))
+					.onSuccess(promise::complete) // retry list with new channel created
 					.onFailure(error -> {
-						log.error("[RSS@ChannelServiceMongo::list] Can't create user's channel");
+						log.error("[RSS@ChannelServiceMongoImpl::list] Can't create user's channel");
 						promise.fail(error);
 					});
-				return;
+			} else {
+				promise.complete(channels);
 			}
-			// get preferences
-			this.channelGlobalServiceMongo.list()
-				.compose(globalChannels -> ChannelsHelper.filterPreferences(user.getUserId(), channels, globalChannels))
-				.compose(ChannelsHelper::mergeToOneChannel)
-				.onSuccess(userChannel -> userChannel.ifPresent(promise::complete))
-				.onFailure(error -> {
-					log.error("[RSS@ChannelServiceMongo::list] Can't get globals channels");
-					promise.fail(error);
-				});
 		}));
 		return promise.future();
 	}
 
 	@Override
-	public Future<JsonObject> retrieve(String idChannel, UserInfos user){
+	public Future<Channel> retrieve(String idChannel, UserInfos user){
 		// Query
-		Promise<JsonObject> promise = Promise.promise();
+		Promise<Channel> promise = Promise.promise();
 		QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
-		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(PromiseHelper.handler(promise)));
+		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(IModelHelper.uniqueResultToIModel(promise, Channel.class)));
 		return promise.future();
 	}
 
 	@Override
-	public Future<JsonObject> deleteChannel(String userId, String idChannel) {
+	public Future<Channel> deleteChannel(String userId, String idChannel) {
 		// Delete the channel
-		Promise<JsonObject> promise = Promise.promise();
+		Promise<Channel> promise = Promise.promise();
 		QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(result -> {
 			if (result.isLeft()) {
-				log.error("[RSS@ChannelServiceMongo::delete] Can't delete user's channel");
+				log.error("[RSS@ChannelServiceMongoImpl::delete] Can't delete user's channel");
 				promise.fail(result.left().getValue());
 				return;
 			}
 			JsonObject channel = result.right().getValue();
 			// can't delete the global channel in this endpoint
 			if (!Boolean.TRUE.equals(channel.getBoolean(Field.GLOBAL, false))) {
-				mongo.delete(collection,  MongoQueryBuilder.build(builder), validResultHandler(PromiseHelper.handler(promise)));
+				mongo.delete(collection,  MongoQueryBuilder.build(builder), validResultHandler(IModelHelper.uniqueResultToIModel(promise, Channel.class)));
 			} else {
-				log.error("[RSS@ChannelServiceMongo::delete] Can't delete global channel, use /channels/globals");
+				log.error("[RSS@ChannelServiceMongoImpl::delete] Can't delete global channel, use /channels/globals");
 				promise.fail("Global channel cannot be deleted");
 			}
 		}));
@@ -151,12 +133,12 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	}
 
 	@Override
-	public Future<JsonObject> update(String userId, String idChannel, List<ChannelFeed> feeds) {
-		Promise<JsonObject> promise = Promise.promise();
+	public Future<Channel> update(String userId, String idChannel, List<ChannelFeed> feeds) {
+		Promise<Channel> promise = Promise.promise();
 		QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(result -> {
 			if (result.isLeft()) {
-				log.error("[RSS@ChannelServiceMongo::update] Can't find user's channel");
+				log.error("[RSS@ChannelServiceMongoImpl::update] Can't find user's channel");
 				promise.fail(result.left().getValue());
 				return;
 			}
@@ -176,7 +158,7 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 							// add preferences to hidden global channels
 							PreferenceHelper.addPreferences(userId, userChannels)
 								.onFailure(error -> {
-									log.error("[RSS@ChannelServiceMongo::update] Can't add preferences");
+									log.error("[RSS@ChannelServiceMongoImpl::update] Can't add preferences");
 									promise.fail(error);
 								});
 						}
@@ -184,14 +166,14 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 						MongoUpdateBuilder modifier = new MongoUpdateBuilder();
 						JsonObject now = MongoDb.now();
 						modifier.set(Field.FEEDS, IModelHelper.toJsonArray(feeds)).set(Field.MODIFIED, now);
-						mongo.update(collection, MongoQueryBuilder.build(builder), modifier.build(), validActionResultHandler(PromiseHelper.handler(promise)));
+						mongo.update(collection, MongoQueryBuilder.build(builder), modifier.build(), validActionResultHandler(IModelHelper.uniqueResultToIModel(promise, Channel.class)));
 					})
 					.onFailure(error -> {
-						log.error("[RSS@ChannelServiceMongo::update] Can't get channels");
+						log.error("[RSS@ChannelServiceMongoImpl::update] Can't get channels");
 						promise.fail(error);
 					});
 			} else {
-				log.error("[RSS@ChannelServiceMongo::update] Can't update global channel, use /channels/globals");
+				log.error("[RSS@ChannelServiceMongoImpl::update] Can't update global channel, use /channels/globals");
 				promise.fail("Global channel cannot be updated here");
 			}
 		}));

@@ -1,7 +1,6 @@
 package net.atos.entng.rss.service;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import net.atos.entng.rss.model.Channel;
 import org.entcore.common.user.UserInfos;
@@ -12,9 +11,9 @@ public interface ChannelGlobalService {
     /**
      * create global channel
      *  @param user         User session token
-     *  @param feeds        Feeds for the channel
+     *  @param feed        Feed for the channel
      */
-    public Future<JsonObject> createGlobalChannel(UserInfos user, JsonObject feeds);
+    public Future<Channel> createGlobalChannel(UserInfos user, JsonObject feed);
 
     /**
      * list all globals channels
@@ -26,5 +25,5 @@ public interface ChannelGlobalService {
      * delete a global channel
      * @param idChannel     global channel id
      */
-    public Future<JsonObject> deleteGlobalChannel(String idChannel);
+    public Future<Channel> deleteGlobalChannel(String idChannel);
 }

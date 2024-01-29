@@ -2,16 +2,10 @@ package net.atos.entng.rss.helpers;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import net.atos.entng.rss.constants.Field;
 import net.atos.entng.rss.model.Channel;
 import net.atos.entng.rss.model.ChannelFeed;
-import org.entcore.common.user.UserInfos;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,7 +28,7 @@ public class ChannelsHelper {
                     globalsChannels.stream()
                             .filter(channel -> !preferences.contains(channel.getId()))
                 )
-                .collect(ArrayList::new, List::add, List::addAll);
+                .collect(Collectors.toList());
                 promise.complete(mergedArray);
             })
             .onFailure(error -> {

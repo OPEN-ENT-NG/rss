@@ -14,7 +14,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -34,12 +33,11 @@ public class IModelHelper {
 
     public static <T extends IModel<T>> List<T> toList(JsonArray results, Class<T> modelClass) {
         return results.stream()
-            .filter(JsonObject.class::isInstance)
-            .map(JsonObject.class::cast)
-            .map(iModel -> toModel(iModel, modelClass))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .collect(Collectors.toList());
+                .filter(JsonObject.class::isInstance)
+                .map(JsonObject.class::cast)
+                .map(iModel -> toModel(iModel, modelClass))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     public static JsonArray toJsonArray(List<? extends IModel<?>> dataList) {
@@ -111,12 +109,65 @@ public class IModelHelper {
         return res;
     }
 
-    public static <T extends IModel<T>> Optional<T> toModel(JsonObject iModel, Class<T> modelClass) {
+    public static <T extends IModel<T>> Handler<Either<String, JsonArray>> resultToIModel(Promise<List<T>> promise, Class<T> modelClass) {
+        return resultToIModel(promise, modelClass, null);
+    }
+
+    /**
+     * Complete a promise from the result of a query, while converting this result into a list of model.
+     *
+     * @param promise the promise we want to complete
+     * @param modelClass the class of the model we want to convert
+     * @param errorMessage a message logged when the query fail
+     * @param <T> the type of the model
+     */
+    public static <T extends IModel<T>> Handler<Either<String, JsonArray>> resultToIModel(Promise<List<T>> promise, Class<T> modelClass, String errorMessage) {
+        return event -> {
+            if (event.isLeft()) {
+                if (errorMessage != null) {
+                    log.error(errorMessage + " " + event.left().getValue());
+                }
+                promise.fail(event.left().getValue());
+            } else {
+                promise.complete(toList(event.right().getValue(), modelClass));
+            }
+        };
+    }
+
+    /**
+     * See {@link #uniqueResultToIModel(Promise, Class, String)}
+     */
+    public static <T extends IModel<T>> Handler<Either<String, JsonObject>> uniqueResultToIModel(Promise<T> promise, Class<T> modelClass) {
+        return uniqueResultToIModel(promise, modelClass, null);
+    }
+
+    /**
+     * Complete a promise from the result of a query, while converting this result into a model.
+     *
+     * @param promise the promise we want to complete
+     * @param modelClass the class of the model we want to convert
+     * @param errorMessage a message logged when the query fail
+     * @param <T> the type of the model
+     */
+    public static <T extends IModel<T>> Handler<Either<String, JsonObject>> uniqueResultToIModel(Promise<T> promise, Class<T> modelClass, String errorMessage) {
+        return event -> {
+            if (event.isLeft()) {
+                if (errorMessage != null) {
+                    log.error(errorMessage + " " + event.left().getValue());
+                }
+                promise.fail(event.left().getValue());
+            } else {
+                promise.complete(toModel(event.right().getValue(), modelClass));
+            }
+        };
+    }
+
+    public static <T extends IModel<T>> T toModel(JsonObject iModel, Class<T> modelClass) {
         try {
-            return Optional.of(modelClass.getConstructor(JsonObject.class).newInstance(iModel));
+            return modelClass.getConstructor(JsonObject.class).newInstance(iModel);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
-            return Optional.empty();
+            return null;
         }
     }
 }

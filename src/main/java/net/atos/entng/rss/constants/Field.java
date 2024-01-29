@@ -20,4 +20,6 @@ public class Field {
     public static final String USER_ID = "userId";
     public static final String DISPLAY_NAME = "displayName";
     public static final String OWNER = "owner";
+    public static final String USER = "user";
+    public static final String GLOBAL_CHANNEL = "globalChannel";
 }
