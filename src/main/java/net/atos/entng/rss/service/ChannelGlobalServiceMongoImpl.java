@@ -6,6 +6,8 @@ import fr.wseduc.mongodb.MongoQueryBuilder;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import net.atos.entng.rss.constants.Field;
 import net.atos.entng.rss.helpers.IModelHelper;
 import net.atos.entng.rss.model.Channel;
@@ -20,6 +22,8 @@ public class ChannelGlobalServiceMongoImpl extends MongoDbCrudService implements
 
     private final String collection;
     private final MongoDb mongo;
+    private static final Logger log = LoggerFactory.getLogger(ChannelGlobalServiceMongoImpl.class);
+
 
     public ChannelGlobalServiceMongoImpl(final String collection) {
         super(collection);
@@ -48,6 +52,7 @@ public class ChannelGlobalServiceMongoImpl extends MongoDbCrudService implements
         QueryBuilder query = QueryBuilder.start(Field.GLOBAL).is(true);
         mongo.find(collection, MongoQueryBuilder.build(query), null, null, MongoDbResult.validResultsHandler(results -> {
             if (results.isLeft()) {
+                log.error("[RSS@ChannelGlobalServiceMongoImpl::list] Can't find global channels : ", results.left().getValue());
                 promise.fail(results.left().getValue());
                 return;
             }

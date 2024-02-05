@@ -62,8 +62,8 @@ public class IModelHelper {
             try {
                 Object object = field.get(iModel);
                 String fieldName = field.getName();
-                if (object == null) {
-                    if (!ignoreNull) statisticsData.putNull(fieldName);
+                if (object == null && !ignoreNull) {
+                    statisticsData.putNull(fieldName);
                 }
                 else if (object instanceof IModel) {
                     statisticsData.put(fieldName, ((IModel<?>)object).toJson());
@@ -126,6 +126,8 @@ public class IModelHelper {
             if (event.isLeft()) {
                 if (errorMessage != null) {
                     log.error(errorMessage + " " + event.left().getValue());
+                } else {
+                    log.error(event.left().getValue());
                 }
                 promise.fail(event.left().getValue());
             } else {
@@ -154,6 +156,8 @@ public class IModelHelper {
             if (event.isLeft()) {
                 if (errorMessage != null) {
                     log.error(errorMessage + " " + event.left().getValue());
+                } else {
+                    log.error(event.left().getValue());
                 }
                 promise.fail(event.left().getValue());
             } else {
