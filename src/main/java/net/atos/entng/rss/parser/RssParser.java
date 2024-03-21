@@ -29,10 +29,7 @@ import javax.xml.parsers.SAXParserFactory;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.*;
 import net.atos.entng.rss.service.FeedServiceImpl;
 
 import io.vertx.core.Handler;
@@ -70,18 +67,15 @@ public class RssParser extends AbstractVerticle implements Handler<Message<JsonO
 				JsonObject message = new JsonObject();
 				message.put("action", RssParser.ACTION_CLEANUP);
 				message.put("cleanTimeout", cleanTimeout);
-				vertx.eventBus().send(RssParser.PARSER_ADDRESS, message, new Handler<AsyncResult<Message<JsonObject>>>() {
-					@Override
-					public void handle(AsyncResult<Message<JsonObject>> ar) {
-						if (ar.succeeded()) {
-							if (log.isDebugEnabled()) {
-								log.debug("Received reply: " + ar.result().body());
-							}
-						} else {
-							log.error("Error Receive reply.", ar.cause());
-						}
-					}
-				});
+				vertx.eventBus().request(RssParser.PARSER_ADDRESS, message, (Handler<AsyncResult<Message<JsonObject>>>) ar -> {
+          if (ar.succeeded()) {
+            if (log.isDebugEnabled()) {
+              log.debug("Received reply: " + ar.result().body());
+            }
+          } else {
+            log.error("Error Receive reply.", ar.cause());
+          }
+        });
 			}
 		});
 	}
@@ -118,45 +112,47 @@ public class RssParser extends AbstractVerticle implements Handler<Message<JsonO
 					});
 				}
 				else{
-					final HttpClientRequest req = httpClient.getAbs(url, response -> {
-						final JsonObject results = new JsonObject();
-						if (response.statusCode() == 200) {
-							response.bodyHandler(buffer -> {
-								final String content = buffer.toString();
-								if (content.isEmpty()) {
-									results.put("status", 204);
-									message.reply(results);
-									return;
-								}
+					httpClient.request(HttpMethod.GET, url)
+						.map(r -> r.setTimeout(15000L))
+						.flatMap(HttpClientRequest::send)
+						.onSuccess(response -> {
+							final JsonObject results = new JsonObject();
+							if (response.statusCode() == 200) {
+								response.bodyHandler(buffer -> {
+									final String content = buffer.toString();
+									if (content.isEmpty()) {
+										results.put("status", 204);
+										message.reply(results);
+										return;
+									}
 
-								try {
-									final SAXParserFactory factory = SAXParserFactory.newInstance();
-									factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-									factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-									factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-									factory.setXIncludeAware(false);
-									final SAXParser parser = factory.newSAXParser();
+									try {
+										final SAXParserFactory factory = SAXParserFactory.newInstance();
+										factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+										factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+										factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+										factory.setXIncludeAware(false);
+										final SAXParser parser = factory.newSAXParser();
 
-									final DefaultHandler handler = new RssParserHandler(new Handler<JsonObject>(){
-										@Override
-										public void handle(JsonObject results1) {
-											rssParserCache.put(url, results1);
-											message.reply(results1);
-										}
-									});
-									parser.parse(new InputSource(new StringReader(content)), handler);
-								} catch (SAXException | IOException | ParserConfigurationException se) {
-									results.put("status", 204);
-									message.reply(results);
-								}
-							});
-						} else {
-							results.put("status", 204);
-							message.reply(results);
+										final DefaultHandler handler = new RssParserHandler(new Handler<JsonObject>(){
+											@Override
+											public void handle(JsonObject results1) {
+												rssParserCache.put(url, results1);
+												message.reply(results1);
+											}
+										});
+										parser.parse(new InputSource(new StringReader(content)), handler);
+									} catch (SAXException | IOException | ParserConfigurationException se) {
+										results.put("status", 204);
+										message.reply(results);
+									}
+								});
+							} else {
+								results.put("status", 204);
+								message.reply(results);
+							}
 						}
-					});
-					req.setTimeout(15000l);
-					req.end();
+					);
 				}
 			}
 		}

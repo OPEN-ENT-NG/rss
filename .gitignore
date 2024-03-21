@@ -24,3 +24,5 @@ data
 developer.id
 *.mod.json
 gradle*
+.env
+dependency-reduced-pom.xml

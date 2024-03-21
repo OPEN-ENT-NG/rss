@@ -45,6 +45,6 @@ public class FeedServiceImpl implements FeedService {
 		message.put("url", url);
 		message.put("force", force);
 		message.put("action", RssParser.ACTION_GET);
-		eb.send(RssParser.PARSER_ADDRESS, message, JsonObjectHandler);
+		eb.request(RssParser.PARSER_ADDRESS, message, JsonObjectHandler);
 	}
 }
