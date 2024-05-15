@@ -21,8 +21,6 @@ package net.atos.entng.rss.service;
 
 import static net.atos.entng.rss.Rss.RSS_COLLECTION;
 
-import com.mongodb.QueryBuilder;
-
 import fr.wseduc.mongodb.MongoDb;
 import fr.wseduc.mongodb.MongoQueryBuilder;
 import fr.wseduc.webutils.Either;
@@ -34,6 +32,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import static com.mongodb.client.model.Filters.*;
 
 public class RssRepositoryEvents implements RepositoryEvents {
 
@@ -80,7 +79,7 @@ public class RssRepositoryEvents implements RepositoryEvents {
 		}
 
 		// Delete the Rss collections of each user in the list
-		final JsonObject criteria = MongoQueryBuilder.build(QueryBuilder.start("owner.userId").in(usersIds));
+		final JsonObject criteria = MongoQueryBuilder.build(in("owner.userId", usersIds));
 
 		mongo.delete(RSS_COLLECTION, criteria, MongoDbResult.validActionResultHandler(new Handler<Either<String,JsonObject>>() {
 			@Override
