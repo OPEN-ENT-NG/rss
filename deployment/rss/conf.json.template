@@ -1,5 +1,5 @@
   	{
-  		"name": "net.atos~rss~1.13-SNAPSHOT",
+  		"name": "net.atos~rss~2.0-b2school-SNAPSHOT",
   		"config": {
   		  "main" : "net.atos.entng.rss.Rss",
   		  "port" : 8028,
