@@ -1,6 +1,5 @@
 package net.atos.entng.rss.service;
 
-import com.mongodb.QueryBuilder;
 import fr.wseduc.mongodb.MongoDb;
 import fr.wseduc.mongodb.MongoQueryBuilder;
 import io.vertx.core.Future;
@@ -11,12 +10,14 @@ import io.vertx.core.logging.LoggerFactory;
 import net.atos.entng.rss.constants.Field;
 import net.atos.entng.rss.helpers.IModelHelper;
 import net.atos.entng.rss.model.Channel;
+import org.bson.conversions.Bson;
 import org.entcore.common.mongodb.MongoDbResult;
 import org.entcore.common.service.impl.MongoDbCrudService;
 import org.entcore.common.user.UserInfos;
 
 import java.util.ArrayList;
 import java.util.List;
+import static com.mongodb.client.model.Filters.*;
 
 public class ChannelGlobalServiceMongoImpl extends MongoDbCrudService implements ChannelGlobalService {
 
@@ -49,7 +50,7 @@ public class ChannelGlobalServiceMongoImpl extends MongoDbCrudService implements
     @Override
     public Future<List<Channel>> list() {
         Promise<List<Channel>> promise = Promise.promise();
-        QueryBuilder query = QueryBuilder.start(Field.GLOBAL).is(true);
+        Bson query = eq(Field.GLOBAL, true);
         mongo.find(collection, MongoQueryBuilder.build(query), null, null, MongoDbResult.validResultsHandler(results -> {
             if (results.isLeft()) {
                 log.error("[RSS@ChannelGlobalServiceMongoImpl::list] Can't find global channels : ", results.left().getValue());
@@ -65,7 +66,7 @@ public class ChannelGlobalServiceMongoImpl extends MongoDbCrudService implements
     @Override
     public Future<Channel> deleteGlobalChannel(String idChannel) {
         Promise<Channel> promise = Promise.promise();
-        QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
+        Bson builder = eq(Field.MONGO_ID, idChannel);
         mongo.delete(collection,  MongoQueryBuilder.build(builder), MongoDbResult.validResultHandler(IModelHelper.uniqueResultToIModel(promise, Channel.class)));
         return promise.future();
     }

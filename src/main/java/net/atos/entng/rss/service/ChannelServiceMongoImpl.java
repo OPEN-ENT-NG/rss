@@ -30,17 +30,18 @@ import net.atos.entng.rss.helpers.PreferenceHelper;
 import net.atos.entng.rss.helpers.ChannelsHelper;
 import net.atos.entng.rss.model.Channel;
 import net.atos.entng.rss.model.ChannelFeed;
+import org.bson.conversions.Bson;
 import org.entcore.common.service.impl.MongoDbCrudService;
 import org.entcore.common.user.UserInfos;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import com.mongodb.QueryBuilder;
 import fr.wseduc.mongodb.MongoDb;
 import fr.wseduc.mongodb.MongoQueryBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.entcore.common.mongodb.MongoDbResult.*;
+import static com.mongodb.client.model.Filters.*;
 
 public class ChannelServiceMongoImpl extends MongoDbCrudService implements ChannelService {
 
@@ -74,7 +75,7 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	@Override
 	public Future<List<Channel>> list(UserInfos user) {
 		Promise<List<Channel>> promise = Promise.promise();
-		QueryBuilder query = QueryBuilder.start("owner.userId").is(user.getUserId()).and(Field.GLOBAL).notEquals(true);
+		Bson query = and(eq("owner.userId", user.getUserId()), ne(Field.GLOBAL, true));
 		// get channels
 		mongo.find(collection, MongoQueryBuilder.build(query), null, null, validResultsHandler(result -> {
 			if (result.isLeft()) {
@@ -104,7 +105,7 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	public Future<Channel> retrieve(String idChannel, UserInfos user){
 		// Query
 		Promise<Channel> promise = Promise.promise();
-		QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
+		Bson builder = eq(Field.MONGO_ID, idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(IModelHelper.uniqueResultToIModel(promise, Channel.class)));
 		return promise.future();
 	}
@@ -113,7 +114,7 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	public Future<Channel> deleteChannel(String userId, String idChannel) {
 		// Delete the channel
 		Promise<Channel> promise = Promise.promise();
-		QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
+		Bson builder = eq(Field.MONGO_ID, idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(result -> {
 			if (result.isLeft()) {
 				log.error("[RSS@ChannelServiceMongoImpl::delete] Can't delete user's channel");
@@ -135,7 +136,7 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 	@Override
 	public Future<Channel> update(String userId, String idChannel, List<ChannelFeed> feeds) {
 		Promise<Channel> promise = Promise.promise();
-		QueryBuilder builder = QueryBuilder.start(Field.MONGO_ID).is(idChannel);
+		Bson builder = eq(Field.MONGO_ID, idChannel);
 		mongo.findOne(collection,  MongoQueryBuilder.build(builder), null, validResultHandler(result -> {
 			if (result.isLeft()) {
 				log.error("[RSS@ChannelServiceMongoImpl::update] Can't find user's channel");
