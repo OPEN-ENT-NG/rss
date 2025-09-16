@@ -20,6 +20,7 @@
 package net.atos.entng.rss;
 
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import net.atos.entng.rss.controller.RssController;
 import net.atos.entng.rss.controller.RssGlobalController;
@@ -36,8 +37,13 @@ public class Rss extends BaseServer {
 	public static final String RSS_COLLECTION = "rss.channels";
 	@Override
 	public void start(final Promise<Void> startPromise) throws Exception {
-		super.start(startPromise);
-
+    final Promise<Void> promise = Promise.promise();
+    super.start(promise);
+    promise.future()
+      .compose(e -> this.initRss())
+      .onComplete(startPromise);
+  }
+  public Future<Void> initRss() {
 		// Subscribe to events published for transition
 		setRepositoryEvents(new RssRepositoryEvents());
 
@@ -45,9 +51,9 @@ public class Rss extends BaseServer {
 		addController(new RssGlobalController());
 		setDefaultResourceFilter(new ShareAndOwner());
 		MongoDbConf.getInstance().setCollection(RSS_COLLECTION);
-		vertx.deployVerticle(RssParser.class.getName(), new DeploymentOptions()
-				.setWorker(true).setConfig(config));
-		startPromise.tryComplete();
+		return vertx.deployVerticle(RssParser.class.getName(), new DeploymentOptions()
+				.setWorker(true).setConfig(config))
+      .mapEmpty();
 	}
 
 }
