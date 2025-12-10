@@ -26,6 +26,7 @@ import fr.wseduc.mongodb.MongoQueryBuilder;
 import fr.wseduc.webutils.Either;
 
 import org.entcore.common.mongodb.MongoDbResult;
+import org.entcore.common.user.ExportResourceResult;
 import org.entcore.common.user.RepositoryEvents;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
@@ -41,7 +42,7 @@ public class RssRepositoryEvents implements RepositoryEvents {
 
 	@Override
 	public void exportResources(JsonArray resourcesIds, boolean exportDocuments, boolean exportSharedResources, String exportId, String userId,
-								JsonArray groups, String exportPath, String locale, String host, Handler<Boolean> handler) {
+								JsonArray groups, String exportPath, String locale, String host, Handler<ExportResourceResult> handler) {
 		// TODO Implement exportResources
 		log.warn("[RssRepositoryEvents] exportResources is not implemented");
 	}
