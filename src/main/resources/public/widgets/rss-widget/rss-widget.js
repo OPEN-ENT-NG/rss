@@ -191,8 +191,36 @@ rssWidget.formatDate = function(date){
 };
 
 rssWidget.validFeed = function(feed){
-	if(feed && feed.title && feed.title.trim() !== "" && feed.link && feed.link.trim() !== ""){
-		return true;
-	}
-	return false;
+    if (!feed || 
+        typeof feed.title !== 'string' || !feed.title.trim() || 
+        typeof feed.link !== 'string' || !feed.link.trim()) {
+        return false;
+    }
+
+    const urlString = feed.link.trim();
+
+    try {
+        const urlToCheck = new URL(urlString);
+
+        // Check protocol
+        if (!['http:', 'https:'].includes(urlToCheck.protocol)) {
+            return false;
+        }
+
+        const pathname = urlToCheck.pathname.toLowerCase();
+
+        // Check authorized extensions
+        const validExtensions = ['.rss', '.xml', '.rdf', '.atom', '.feed']; 
+
+        const hasValidExtension = validExtensions.some(ext => pathname.endsWith(ext));
+
+        // No extension is valid too
+        const lastSegment = pathname.split('/').pop();         
+        const hasNoExtension = !lastSegment.includes('.');
+
+        return hasValidExtension || hasNoExtension;
+
+    } catch (e) {
+        return false; // URL not authorized
+    }
 };
