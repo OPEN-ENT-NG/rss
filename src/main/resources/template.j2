@@ -1,0 +1,20 @@
+{
+  "name": "net.atos~rss",
+  "config": {
+    "main": "net.atos.entng.rss.Rss",
+    "port": 8028,
+    "app-name": "Rss",
+    "csrf-token": {{ csrfToken | default('true') }},
+    "app-address": "/rss",
+    "app-icon": "rss-large",
+    "app-type" : "WIDGET",
+    "host": "https://{{ host }}",
+    "ssl": true,
+    "auto-redeploy": false,
+    "userbook-host": "https://{{ host }}",
+    "integration-mode": "{{ integration_mode|default('HTTP') }}",
+    "app-registry.port": 8012,
+    "mode": "prod",
+    "entcore.port": 8009
+  }
+}
