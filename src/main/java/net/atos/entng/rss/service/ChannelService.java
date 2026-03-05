@@ -64,4 +64,19 @@ public interface ChannelService {
 	 * @param feeds			Feeds for the channel
 	 */
 	public Future<Channel> update(String userId, String id, List<ChannelFeed> feeds);
+
+	/**
+	 * list channels by structure identifier
+	 * @param structureId   Structure identifier
+	 * @return              List of channels for the given structure
+	 */
+	public Future<List<Channel>> listByStructureId(String structureId);
+
+	/**
+	 * list channels by structure identifier and optional type filter
+	 * @param structureId   Structure identifier
+	 * @param type          Channel type filter (e.g. "e-sidoc", "bibliocollege"), or null for all
+	 * @return              List of channels for the given structure and type
+	 */
+	public Future<List<Channel>> listByStructureId(String structureId, String type);
 }

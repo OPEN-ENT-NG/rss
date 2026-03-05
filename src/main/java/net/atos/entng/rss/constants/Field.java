@@ -4,6 +4,8 @@ public class Field {
     public static final String FEEDS = "feeds";
     public static final String CHANNELS = "channels";
     public static final String GLOBAL = "global";
+    public static final String STRUCTURE_ID = "structureID";
+    public static final String TYPE = "type";
 
     public static final String MONGO_ID = "_id";
     public static final String ID = "id";

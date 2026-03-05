@@ -44,8 +44,10 @@ import fr.wseduc.rs.Post;
 import fr.wseduc.rs.Put;
 import fr.wseduc.security.ActionType;
 import fr.wseduc.security.SecuredAction;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class RssController extends MongoDbControllerHelper {
 	static final String RESOURCE_NAME = "rss";
@@ -54,6 +56,9 @@ public class RssController extends MongoDbControllerHelper {
 	private final ChannelService channelService;
 	private final ChannelGlobalService channelGlobalService;
 	private final FeedService feedService;
+	
+	private static final List<String> ALLOWED_CHANNEL_TYPES = Arrays.asList("e-sidoc", "bibliocollege");
+
 
 	public RssController(EventBus eb) {
 		super(Rss.RSS_COLLECTION);
@@ -87,7 +92,12 @@ public class RssController extends MongoDbControllerHelper {
 				List<Channel> channels = composeInfos.getJsonArray(Field.CHANNELS).getList();
 				return ChannelsHelper.filterPreferences(composeInfos.getString(Field.USER), channels, globalChannels);
 			})
-			.compose(ChannelsHelper::mergeToOneChannel)
+			.compose(filteredChannels -> {
+				List<Channel> channelsWithoutStructure = filteredChannels.stream()
+					.filter(channel -> channel.getStructureID() == null || channel.getStructureID().isEmpty())
+					.collect(Collectors.toList());
+				return ChannelsHelper.mergeToOneChannel(channelsWithoutStructure);
+			})
 			.compose(userChannel -> {
 				if (!userChannel.isPresent()) {
 					return Future.failedFuture("No channel found");
@@ -177,5 +187,28 @@ public class RssController extends MongoDbControllerHelper {
 		} else {
 			badRequest(request, "invalid.url");
 		}
+	}
+
+	@Get("/channels/structure/:structureId")
+	@SecuredAction(value = "", type = ActionType.AUTHENTICATED)
+	public void getChannelsByStructure(final HttpServerRequest request) {
+		final String structureId = request.params().get("structureId");
+		if (structureId == null || structureId.trim().isEmpty()) {
+			badRequest(request, "invalid.structureId");
+			return;
+		}
+		final String type = request.params().get("type");
+		if (type != null && !type.trim().isEmpty() && !ALLOWED_CHANNEL_TYPES.contains(type)) {
+			badRequest(request, "invalid.type");
+			return;
+		}
+		channelService.listByStructureId(structureId, type)
+			.onSuccess(channels -> renderJson(request, IModelHelper.toJsonArray(channels)))
+			.onFailure(error -> {
+				String message = String.format("[RSS@%s::GetChannelsByStructure] Failed to get channels for structure %s : %s",
+						this.getClass().getSimpleName(), structureId, error.getMessage());
+				log.error(message);
+				renderError(request);
+			});
 	}
 }
