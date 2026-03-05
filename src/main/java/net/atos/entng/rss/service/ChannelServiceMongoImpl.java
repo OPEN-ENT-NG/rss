@@ -180,4 +180,27 @@ public class ChannelServiceMongoImpl extends MongoDbCrudService implements Chann
 		}));
 		return promise.future();
 	}
+
+	@Override
+	public Future<List<Channel>> listByStructureId(String structureId) {
+		return listByStructureId(structureId, null);
+	}
+
+	@Override
+	public Future<List<Channel>> listByStructureId(String structureId, String type) {
+		Promise<List<Channel>> promise = Promise.promise();
+		Bson query = type != null && !type.trim().isEmpty()
+				? and(eq(Field.STRUCTURE_ID, structureId), eq(Field.TYPE, type))
+				: eq(Field.STRUCTURE_ID, structureId);
+		mongo.find(collection, MongoQueryBuilder.build(query), null, null, validResultsHandler(result -> {
+			if (result.isLeft()) {
+				log.error("[RSS@ChannelServiceMongoImpl::listByStructureId] Can't find channels for structureID {}", structureId);
+				promise.fail(result.left().getValue());
+				return;
+			}
+			List<Channel> channels = IModelHelper.toList(result.right().getValue(), Channel.class);
+			promise.complete(channels);
+		}));
+		return promise.future();
+	}
 }

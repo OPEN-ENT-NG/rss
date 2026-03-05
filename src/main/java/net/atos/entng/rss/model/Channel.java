@@ -14,6 +14,8 @@ public class Channel implements IModel<Channel> {
     private List<ChannelFeed> feeds;
     private JsonObject owner;
     private boolean global;
+    private String structureID;
+    private String type;
     public Channel(JsonObject channel) {
         this._id = channel.getString(Field.MONGO_ID, null);
         this.created = channel.getJsonObject(Field.CREATED, null);
@@ -21,6 +23,8 @@ public class Channel implements IModel<Channel> {
         this.owner = channel.getJsonObject(Field.OWNER, null);
         this.global = channel.getBoolean(Field.GLOBAL, false);
         this.feeds = IModelHelper.toList(channel.getJsonArray(Field.FEEDS, new JsonArray()), ChannelFeed.class);
+        this.structureID = channel.getString(Field.STRUCTURE_ID, null);
+        this.type = channel.getString(Field.TYPE, null);
     }
     public String getId() {
         return _id;
@@ -62,6 +66,20 @@ public class Channel implements IModel<Channel> {
     }
     public Channel setOwner(JsonObject owner) {
         this.owner = owner;
+        return this;
+    }
+    public String getStructureID() {
+        return structureID;
+    }
+    public Channel setStructureID(String structureID) {
+        this.structureID = structureID;
+        return this;
+    }
+    public String getType() {
+        return type;
+    }
+    public Channel setType(String type) {
+        this.type = type;
         return this;
     }
     public void addFeeds(List<ChannelFeed> feeds) {
