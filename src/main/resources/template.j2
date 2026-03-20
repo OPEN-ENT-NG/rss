@@ -2,6 +2,10 @@
   "name": "net.atos~rss",
   "config": {
     "main": "net.atos.entng.rss.Rss",
+    "probes": [
+      "org.entcore.common.http.health.Neo4jProbe",
+      "org.entcore.common.http.health.MongoProbe"
+    ],
     "port": 8028,
     "app-name": "Rss",
     "csrf-token": {{ csrfToken | default('true') }},
