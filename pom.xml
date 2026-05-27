@@ -23,8 +23,8 @@
   </repositories>
   <properties>
     <entcore.version>6.14-SNAPSHOT</entcore.version>
-    <modJsonSchemaValidatorVersion>2.1-separation-SNAPSHOT</modJsonSchemaValidatorVersion>
-    <entCoreLibsVersion>6.14-separation-SNAPSHOT</entCoreLibsVersion>
+    <modJsonSchemaValidatorVersion>2.1-SNAPSHOT</modJsonSchemaValidatorVersion>
+    <entCoreLibsVersion>6.14-SNAPSHOT</entCoreLibsVersion>
     <entCoreVersion>6.14-SNAPSHOT</entCoreVersion>
     <modMongoVersion>4.1-SNAPSHOT</modMongoVersion>
   </properties>
